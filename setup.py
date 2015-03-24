@@ -25,5 +25,8 @@ setup(name='cpyutils',
       author='Carlos de Alfonso',
       author_email='caralla@upv.es',
       url='http://www.grycap.upv.es/clues',
-      py_modules = [ 'config', 'db', 'evaluate', 'eventloop', 'exceptionmsg', 'oneconnect', 'rpcweb', 'timeoutxmlrpccli', 'xmlobject' ]
+      packages = [ 'cpyutils' ],
+      package_dir = { 'cpyutils' : '.'},
+      py_modules = []
+      # py_modules = [ 'config', 'db', 'evaluate', 'eventloop', 'exceptionmsg', 'oneconnect', 'rpcweb', 'timeoutxmlrpccli', 'xmlobject' ]
 )
