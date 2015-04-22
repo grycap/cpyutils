@@ -24,9 +24,8 @@ setup(name='cpyutils',
       description='CLUES Python utils - Utils and General classes that spin off from CLUES',
       author='Carlos de Alfonso',
       author_email='caralla@upv.es',
-      url='http://www.grycap.upv.es/clues',
+      url='https://github.com/grycap/cpyutils',
       packages = [ 'cpyutils' ],
       package_dir = { 'cpyutils' : '.'},
       py_modules = []
-      # py_modules = [ 'config', 'db', 'evaluate', 'eventloop', 'exceptionmsg', 'oneconnect', 'rpcweb', 'timeoutxmlrpccli', 'xmlobject' ]
 )

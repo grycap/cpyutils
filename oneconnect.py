@@ -455,10 +455,10 @@ class ONEConnect():
         else:
             return False
 
-    def migrate_vm(self, vmid, hid, live = True):
+    def migrate_vm(self, vm_id, hid, live = True):
         if self.get_server_ref():
             try:
-                result, str_out, errno = self._server.one.vm.migrate(self._ONE_AUTH, vmid, hid, live, True)
+                result, str_out, errno = self._server.one.vm.migrate(self._ONE_AUTH, vm_id, hid, live, True)
             except socket.timeout:
                 result = False
                 _LOGGER.debug("call to ONE timed out")
