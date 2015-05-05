@@ -497,7 +497,6 @@ class Analyzer:
         
         retval = False
         for v in p[3].value:
-            print v, p[1]
             if p[1] == v:
                 retval = True
                 break
