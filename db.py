@@ -21,7 +21,6 @@ import logging
 import hashlib
 import re
 import os
-from exceptionmsg import ExceptionMSG
 
 try:
     import sqlite3 as sqlite
@@ -38,12 +37,12 @@ except:
 _LOGGER=logging.getLogger("[DB]")
 _LOGGER.disabled = True
 
-class MalformedConnectionString(ExceptionMSG): pass
-class UnknownDBDriver(ExceptionMSG): pass
+class MalformedConnectionString(Exception): pass
+class UnknownDBDriver(Exception): pass
 class MissingDBName(Exception): pass
 class DBConnectionError(Exception): pass
-class InvalidDBFile(ExceptionMSG): pass
-class MissingLibrary(ExceptionMSG): pass
+class InvalidDBFile(Exception): pass
+class MissingLibrary(Exception): pass
 
 connection_parameters = {
     'driver': 'mysql',
