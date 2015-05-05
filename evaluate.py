@@ -248,7 +248,7 @@ class Analyzer:
 
     def check(self, expr):
         self._current_expr = expr
-        return self.yacc.parse(expr, debug=0)
+        return self.yacc.parse(expr, debug=0, lexer=self.lexer)
     
     def t_error(self, t):
         _LOGGER.error("not recognized token")
@@ -497,6 +497,7 @@ class Analyzer:
         
         retval = False
         for v in p[3].value:
+            print v, p[1]
             if p[1] == v:
                 retval = True
                 break
@@ -652,6 +653,19 @@ class Analyzer:
 
 if __name__ == '__main__':
     logging.basicConfig(filename=None,level=logging.DEBUG)
+    
+    keywords={'queues': ['all.q',''], 'hostname': 'vnode10.localdomain', 'hostgroups': []}
+    
+    
+    annie = Analyzer(autodefinevars=False)
+    keywords = vars_from_string('queues=[all.q];hostname="vnode10.localdomain";')
+    keywords = { 'queues': TypedList([TypedClass.auto("all.q")]), 'hostname': TypedClass.auto("vnode10.localdomain")}
+    annie.add_vars(keywords, True)
+    print annie.check(' "all.q" in queues ')
+    print annie.check('hostname=="all.q"')
+    print annie.check('hostname=="vnode10.localdomain"')
+    exit()
+    
     e=vars_from_string('jobs=;sessions=1181;ncpus=4;physmem=3922492kb;ppn=4;netload=20083230506;uname="Linux ngieswnv1 2.6.32-431.29.2.el6.x86_64 #1 SMP Tue Sep 9 13:45:55 CDT 2014 x86_64";nsessions=1;properties=["lcgpro"];gres=;nusers=1;idletime=521677;queues=["chemig","tutig","dteam","biomed","ops","ictig","earthig","opsig","lifeig","rollout","engig","socialig","physig"];hostname="ngieswnv1";varattr=;loadave=0.00;state="free";opsys="linux";totmem=5986872kb;availmem=5827616kb;rectime=1417717220;')
     for k,v in e.items():
         print k,v

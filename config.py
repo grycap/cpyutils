@@ -114,16 +114,20 @@ def read_config(section, variables, sink, filename = None):
         options = config.options(section)
 
     for varname, value in variables.items():
+        orig_varname = varname
         varname = varname.lower()
         if varname in options:
-            if isinstance(value, bool):
-                value = config.getboolean(section, varname)
-            elif isinstance(value, int):
-                value = config.getint(section, varname)
-            else:
-                value = config.get(section, varname)
-                if len(value) > 0:
-                    value = value.split("#")[0].strip()
+            try:
+                if isinstance(value, bool):
+                    value = config.getboolean(section, varname)
+                elif isinstance(value, int):
+                    value = config.getint(section, varname)
+                else:
+                    value = config.get(section, varname)
+                    if len(value) > 0:
+                        value = value.split("#")[0].strip()
+            except:
+                raise Exception("Invalid value for variable %s in config file" % orig_varname)
                 
         varname = varname.upper()
         sink.__dict__[varname] = value
