@@ -149,6 +149,48 @@ class Configuration():
         if callback is not None:
             callback(self)
 
+    """
+    This function is used to map the standard log level values from the string to the logging variable value
+    """
+    def maploglevel(self, varname):
+        import logging
+        self.mapvalues(varname,
+            {
+                "debug": logging.DEBUG,
+                "info": logging.INFO,
+                "warning": logging.WARNING, 
+                "error": logging.ERROR
+            },
+            logging.DEBUG,
+            True
+        )
+            
+    """
+    This function is used to map the values of a var to other values (e.g. strings to integer values)
+    """
+    def mapvalues(self, varname, maps, default, lowercase = True):
+        value = self.__dict__[varname]
+        result = None
+        found = False
+        if lowercase:
+            value = value.lower()
+            for k, v in maps.items():
+                if value == k.lower():
+                    result = v
+                    found = True
+                    break
+        else:
+            for k, v in maps.items():
+                if value == k:
+                    result = v
+                    found = True
+                    break
+        
+        if found:
+            self.__dict__[varname] = result
+        else:
+            self.__dict__[varname] = default
+
 def existing_config_files():
     """
         Method that calculates all the configuration files that are valid, according to the

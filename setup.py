@@ -20,7 +20,7 @@
 from distutils.core import setup
 
 setup(name='cpyutils',
-      version='0.03',
+      version='0.04',
       description='CLUES Python utils - Utils and General classes that spin off from CLUES',
       author='Carlos de Alfonso',
       author_email='caralla@upv.es',
