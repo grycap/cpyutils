@@ -171,7 +171,7 @@ class ParameterHandler:
             self._op_long_to_parameter[operation][long_parametername] = parametername
         return True
 
-    def parse(self, argv, accept_other_args = False, accept_other_args = False):
+    def parse(self, argv, accept_other_args = False, accept_other_op_args = False):
         result = Result()
 
         while len(argv) > 0:
