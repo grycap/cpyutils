@@ -38,6 +38,22 @@ myconfig = cpyutils.config.Configuration(
     }
 )
 ```
+### parameters module
+
+It offers an easy mechanism to parse a commandline and to generate the help for a CLI. The next code will be a version for the ```ls``` command line utility.
+
+```
+ap = CmdLineParser("ls", "List directory contents", [
+  Flag("-a", "--all", desc = "do not ignore entries starting with ."),
+  Flag("-A", "--almost-all", desc = "do not list implied . and .."),
+  Flag("--author", desc = "with -l, print the author of each file"),
+  Flag("-b", "--escape", desc = "print C-style escapes for nongraphic characters"),
+  Parameter("--block-size", desc = "scale sizes by SIZE before printing them.  E.g., '--block-size=M' prints sizes in units of 1,048,576 bytes.  See SIZE format."),
+  Argument("FILE", "the files that want to be listed", count = -1)
+])
+
+print ap
+```
 
 # Installing
 
