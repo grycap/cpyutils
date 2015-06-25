@@ -17,6 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # 
 import logging
+import sys
 _LOGGER = logging.getLogger("[PARAMS]")
 _LOGGER.disabled = True
 
@@ -488,6 +489,55 @@ class CmdLineParser(ArgumentParser):
         else:
             return False, None, ", ".join(error)
         
+    # This function enables the common workflow for the command line parsing
+    # * In case that it is operation based, it should be called the self_service with the ops parameter set to True. Then the function that has the same name than the operation will be called
+    # * In case that it is command line based, it should be called the self_service function with the ops parameter set to True. Then the function "process" will be called. The developer should
+    #   overwrite the process(self, result) operation to carry out the proper actions
+    def self_service(self, ops = False):
+        if ops:
+            parsed, result, info = self.autocall_ops(sys.argv[1:])
+            if not parsed:
+                if (result is None):
+                    print "Error:", info
+                    sys.exit(-1)
+                    
+            if (result.values['-h']):
+                print self
+                sys.exit(0)
+        
+            if (result.operation is None):
+                print info
+                sys.exit(-1)
+                
+            (opexecuted, explain) = info
+            print explain
+            if opexecuted:
+                sys.exit(0)
+            else:
+                sys.exit(-1)
+        else:
+            parsed, result, info = self.parse(sys.argv[1:])
+            print result.values
+            if not parsed:
+                if (result is None):
+                    print "Error:", info
+                    sys.exit(-1)
+                else:
+                    print info
+                    sys.exit(0)
+            else:
+                if self.process(result, info):
+                    sys.exit(0)
+                else:
+                    print "Exit with errors"
+                    sys.exit(-1)
+                   
+    # This function is executed if the self_service function is called with the ops parameter set to False and the commandline is properly parsed.
+    # * It should return True in case that the function is properly executed. Otherwise it should return False.
+    def process(self, result, info):
+        print "Not implemented"
+        return True
+        
 if __name__ == '__main__':
     import sys
     
@@ -506,6 +556,7 @@ if __name__ == '__main__':
     ])
     
     parsed, result, info = ap.parse(sys.argv[1:])
+    print result.values
     if not parsed:
         if (result is None):
             print "Error:", info
@@ -550,14 +601,4 @@ if __name__ == '__main__':
             ]),
         ])
 
-    parsed, result, info = ap.autocall_ops(sys.argv[1:])
-    if not parsed:
-        if (result is None):
-            print "Error:", info
-            sys.exit(-1)
-        else:
-            print info
-            sys.exit(0)
-    else:
-        print info
-        sys.exit(0)
+    ap.self_service(True)
