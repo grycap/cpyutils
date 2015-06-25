@@ -53,6 +53,7 @@ ap = CmdLineParser("ls", "List directory contents", [
 ])
 
 print ap
+ap.self_service(False)
 ```
 
 # Installing
