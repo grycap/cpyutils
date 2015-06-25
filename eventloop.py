@@ -279,7 +279,10 @@ _NOW = 0
 def now():
     global _eventloop
     global _NOW
-    _NOW = _eventloop.time()
+    if _eventloop is None:
+        _NOW = time.time()
+    else:
+        _NOW = _eventloop.time()
     return _NOW
 
 # TODO: implementando la cola con prioridades (hay eventos "poco" prioritarios y otros que son mas: ej. un trabajo termina)

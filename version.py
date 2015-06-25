@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# coding: utf-8
 #
 # CLUES Python utils - Utils and General classes that spin off from CLUES
 # Copyright (C) 2015 - GRyCAP - Universitat Politecnica de Valencia
@@ -16,17 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # 
+VERSION="0.06"
 
-from distutils.core import setup
-import version
-
-setup(name='cpyutils',
-      version=version.get(),
-      description='CLUES Python utils - Utils and General classes that spin off from CLUES',
-      author='Carlos de Alfonso',
-      author_email='caralla@upv.es',
-      url='https://github.com/grycap/cpyutils',
-      packages = [ 'cpyutils' ],
-      package_dir = { 'cpyutils' : '.'},
-      py_modules = []
-)
+def get():
+    global VERSION
+    return VERSION
