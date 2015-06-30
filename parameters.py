@@ -487,6 +487,8 @@ class CmdLineParser(ArgumentParser):
                 return False, result, self._tostr(0)
             return True, result, ""
         else:
+            if (result is not None) and result.values['-h']:
+                return False, result, self._tostr(0)
             return False, None, ", ".join(error)
         
     # This function enables the common workflow for the command line parsing
