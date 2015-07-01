@@ -28,5 +28,6 @@ setup(name='cpyutils',
       url='https://github.com/grycap/cpyutils',
       packages = [ 'cpyutils' ],
       package_dir = { 'cpyutils' : '.'},
+      # download_url = "https://github.com/grycap/cpyutils/tarball/%s" % version.get(),
       py_modules = []
 )
