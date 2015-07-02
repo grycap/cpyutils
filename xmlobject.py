@@ -111,7 +111,10 @@ class XMLObject:
 		self._parse(xml_str, parameters)
 
 def _to_numeric(value):
-	v = float(value)
+	try:
+	    v = float(value)
+	except:
+	    return None
 	f = v
 	try:
 	    e = int(v)
