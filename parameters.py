@@ -475,6 +475,7 @@ class CmdLineParser(ArgumentParser):
             except:
                 raise Exception("No handler for command %s" % result.operation)
             
+            self.preops(result, error)
             retval = method(result.values[result.operation], error)
             return True, result, retval
         else:
@@ -533,6 +534,10 @@ class CmdLineParser(ArgumentParser):
                 else:
                     print "Exit with errors"
                     sys.exit(-1)
+
+    # This function is exectued in the autocall_ops procedure. It is called prior to the call to the function that implements the operation
+    def preops(self, result, info):
+        pass
                    
     # This function is executed if the self_service function is called with the ops parameter set to False and the commandline is properly parsed.
     # * It should return True in case that the function is properly executed. Otherwise it should return False.
