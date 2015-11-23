@@ -56,6 +56,9 @@ connection_parameters = {
 class DB():
     def sql_query(self, query, commit = False):
         return False, 0, None
+    
+    def commit(self):
+        pass
 
     @staticmethod
     def create_from_connection_parameters(conn_p):
@@ -112,6 +115,16 @@ class DB_sqlite(DB):
             self._db = sqlite.connect(self._path)
         except Exception as e:
             raise DBConnectionError("error connecting to database (%s)" % str(e))
+
+    def commit(self):
+        try:
+            connection = sqlite.connect(self._path)
+            connection.commit()
+        except Exception, e:
+            raise e
+            _LOGGER.debug("error")
+            return False
+        return True
 
     def sql_query(self, query, commit = False):
         _LOGGER.debug("executing query: %s " % query)

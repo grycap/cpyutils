@@ -190,6 +190,43 @@ class Configuration():
             self.__dict__[varname] = result
         else:
             self.__dict__[varname] = default
+            
+    """
+    These functions act as helpers to translate a 'character separated' list stored in a string, to a typed list
+      * these methods are included because they are very common in configuration files
+    """
+    @staticmethod
+    def str2intlist(str_list, separator = ","):
+        ar_list = [ x.strip() for x in str_list.split(separator) ]
+        result = []
+        for v in ar_list:
+            try:
+                v = int(v)
+            except:
+                v = None
+            if v is not None:
+                result.append(v)
+        return result
+
+    @staticmethod
+    def str2list(str_list, separator = ","):
+        ar_list = [ x.strip() for x in str_list.split(separator) ]
+        return ar_list
+    
+    @staticmethod
+    def str2floatlist(str_list, separator = ","):
+        ar_list = [ x.strip() for x in str_list.split(separator) ]
+        result = []
+        for v in ar_list:
+            try:
+                v = float(v)
+            except:
+                v = None
+            if v is not None:
+                result.append(v)
+        return result
+
+
 
 def existing_config_files():
     """
