@@ -122,6 +122,12 @@ def response_txt(content):
     content_str = str(content)
     return content_str
     
+def add_header(name, content):
+    bottle.response.set_header(name, content)
+    
+def set_status(_id):
+    bottle.response.status = _id
+    
 def error(num, txt):
     '''
     Typical error:
