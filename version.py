@@ -16,8 +16,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # 
-VERSION="0.13"
+VERSION="0.14"
 
 def get():
     global VERSION
     return VERSION
+
+'''
+CHANGELOG:
+
+0.14    -   2015-12-15
+    Including the iputils.py file
+
+0.13
+    Correcting one bug in runcommand
+'''
