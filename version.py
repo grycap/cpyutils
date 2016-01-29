@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # 
-VERSION="0.20"
+VERSION="0.21"
 
 def get():
     global VERSION
@@ -24,6 +24,9 @@ def get():
 
 '''
 CHANGELOG:
+
+0.21    -   2016-01-29
+    Creating fileutils.py that now includes utilities to interpret a csv formatted file.
 
 0.20    -   2016-01-28
     1. CONFIGURATION ENHANCEMENT
