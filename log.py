@@ -17,8 +17,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 import logging
+import eventloop
 
 _logsetup = False
+_include_timestamp = False
+
+def include_timestamp(include = True):
+    global _include_timestamp
+    _include_timestamp = include
 
 class Log:
     '''
@@ -46,6 +52,9 @@ class Log:
         self._logger.setLevel(loglevel)
         
     def log(self, txt, loglevel = logging.DEBUG):
+        global _include_timestamp
+        if _include_timestamp:
+            txt = "(%10.3f) %s" % (eventloop.now(), txt)
         if loglevel == logging.DEBUG:
             self._logger.debug(txt)
         elif loglevel == logging.INFO:

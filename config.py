@@ -122,6 +122,8 @@ def read_config(section, variables, sink, filename = None):
                     value = config.getboolean(section, varname)
                 elif isinstance(value, int):
                     value = config.getint(section, varname)
+                elif isinstance(value, float):
+                    value = config.getfloat(section, varname)
                 else:
                     value = config.get(section, varname)
                     if len(value) > 0:

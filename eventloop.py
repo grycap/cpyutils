@@ -15,256 +15,23 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-# 
+#
 
+import log
 import time
-import logging
-
-_LOGGER = logging.getLogger("[ELOOP]")
-
-_id = -1
-
-class Event:
-    @staticmethod
-    def get_event_id():
-        global _id
-        _id = _id + 1
-        return _id
-
-    PRIO_LOWER = 0
-    PRIO_LOW = 10
-    PRIO_NORMAL = 20
-    PRIO_HIGH = 30
-    PRIO_HIGHER = 40
-    
-    def __init__(self, t, desc, callback, parameters):
-        self.id = Event.get_event_id()
-        self.t = t
-        self.desc = desc
-        self.callback = callback
-        self.parameters = parameters
-        
-        # This is a hack to mute a event (ad-hoc solution to mute ''LRMS lifecycle'') TODO (0): eliminar?
-        self.stealth = False
-        
-    def call(self):
-        if not self.stealth:
-            _LOGGER.debug("(@%.2f) executing event (%s) %s - time %.2f" % (_eventloop.time(), self.id, self.desc, self.t))
-            
-        if self.callback is not None:
-            self.callback(*self.parameters)
-            
-    def __str__(self):
-        return "(EVENT %d@%.2f) %s" % (self.id, self.t, self.desc)
-
-class Event_Periodical(Event):
-    def __init__(self, start, t, desc, callback, parameters):
-        Event.__init__(self, t, desc, callback, parameters)
-        self.start = start
-        self.last_called = None
-        
-    def next_sched(self):
-        last_called = self.last_called        
-        if last_called is None:
-            last_called = 0
-        
-        last_called = max(self.start, last_called)
-        return last_called + self.t
-    
-    def call(self):
-        global _eventloop
-        self.last_called = _eventloop.time()
-        Event.call(self)
-
-class _EventLoop:
-    def __str__(self):
-        retval = "Current Time: %f, Pending Events: %d" % (self.time(), len(self._events))
-        if len(self._events):
-            retval = "%s, Next Event in %.2f time units\nEvent List:" % (retval, self._events[0].t - self._t)
-            for ev in self._events:
-                retval = "%s\n%s" % (retval, "+%.2f [%s]" % (ev.t - self._t, ev.desc))
-        return retval
-    
-    def __init__(self):
-        self._events = []
-        self._periodical_events = []
-        self._t = 0
-        
-    def timestep(self):
-        self._t = self._t + 1
-        return self._t
-        
-    def _execute_periodical_events(self, next_sched_time):
-        # Now we are going to check if there is a periodical event before the next event
-        # while True:
-        min_sched = next_sched_time
-        pe_execute = None
-        for pe in self._periodical_events:
-            next_sched = pe.next_sched() 
-            if next_sched <= min_sched:
-                pe_execute = pe
-                min_sched = next_sched
-                
-        if (pe_execute is not None) and (min_sched >= self._t):
-            self._t = min_sched
-            pe_execute.call()
-            return pe_execute
-    
-        return None
-        
-    #def force_next_event(self):
-    #    # This method is only for non real time timemachines
-    #    if len(self._periodical_events) > 0:
-    #        for pe in self._periodical_events:
-    #            next_sched = pe.next_sched()
-    #            ev = self._execute_periodical_events(next_sched)
-    #
-    #            # We finalize here, because the previous method will check if there is any other event (periodical or not) and will execute it
-    #            if ev is not None:
-    #                return True
-    #            
-    #    return False
-        
-    def advance_to_next_event(self):
-        if len(self._events) == 0:
-            return None
-        
-        pe_execute = self._execute_periodical_events(self._events[0].t)
-        if pe_execute is not None:
-            return pe_execute
-                
-        ev = self._events.pop(0)
-        self._t = ev.t
-        ev.call()
-        return ev
-    
-    def time(self):
-        return self._t
-    
-    def event_count(self):
-        return len(self._events)
-    
-    def add_control_event(self, elapsed, desc = "control event to force reaching to a timestamps in simulated environments", stealth = True):
-        self.add_event(elapsed, desc, stealth = stealth)
-    
-    def add_periodical_event(self, elapsed, start_time = 0, desc = "", callback = None, arguments = [], stealth = False):
-        ev = Event_Periodical(self._t + start_time, elapsed, desc, callback, arguments)
-        # ev = Event_Periodical(start_time, elapsed, desc, callback, arguments)
-        ev.stealth = stealth    # TODO (0): eliminar?
-
-        if not stealth:         # TODO (0): eliminar?
-            _LOGGER.debug("(@%.2f) appending periodical event (%s) %s @ %.2f" % (self.time(), ev.id, ev.desc, ev.t))
-        
-        self._periodical_events.append(ev)
-        return ev.id
-    
-    def add_event(self, elapsed, desc = "", callback = None, arguments = [], stealth = False):
-        ev = Event(self._t + elapsed, desc, callback, arguments)
-        ev.stealth = stealth    # TODO (0): eliminar?
-
-        if not stealth:         # TODO (0): eliminar?
-            _LOGGER.debug("(@%.2f) appending event (%s) %s @ %.2f" % (self.time(), ev.id, ev.desc, ev.t))
-        
-        if len(self._events) == 0:
-            self._events.append(ev)
-            return ev        
-
-        # now find where to insert the event
-        prev_t = self._t
-        for i in range(0, len(self._events)):
-            if (ev.t >= prev_t) and (ev.t < self._events[i].t): 
-                self._events.insert(i, ev)
-                return ev
-            else:
-                prev_t = self._events[i].t
-
-        self._events.append(ev)
-        return ev
-    
-    def cancel_event(self, ev_id):
-        # This is probably a slow mechanism to cancel an event, but by now will be enough
-        events = [ ev for ev in self._events if ev.id != ev_id ]
-        self._events = events
-        
-        periodical_events = [ ev for ev in self._periodical_events if ev.id != ev_id ]
-        self._periodical_events = periodical_events
-
-    def loop(self, stime = 0.5):
-        _LOGGER.info("running in simulated time")
-        _LOGGER.debug("remember that this method should be used only for batches because of lack of interactivity")
-        
-        while True:
-            e = self.advance_to_next_event()
-            if e is None:
-                time.sleep(stime)
-
-class _EventLoop_RT(_EventLoop):
-    def __init__(self):
-        self._s = 0 # time.time()
-        _EventLoop.__init__(self)
-        
-    def time(self):
-        return time.time() - self._s
-
-    def force_next_event(self):
-        pass
-
-    def execute_next_event(self):
-        # Now we are going to check if there is a periodical event before the next event
-        # while True:
-        min_sched = self.time()
-            
-        pe_execute = None
-        for pe in self._periodical_events:
-            next_sched = pe.next_sched()
-            if next_sched <= min_sched:
-                pe_execute = pe
-                min_sched = next_sched
-                
-        if (pe_execute is not None):
-            # self._t = min_sched
-            pe_execute.call()
-            return pe_execute
-
-        # -----------------------
-
-        if len(self._events) == 0:
-            return None
-
-        if self.time() >= self._events[0].t:
-            ev = self._events.pop(0)
-            self._t = ev.t
-            ev.call()
-            self._t = time.time()
-            return ev
-        
-        return None
-
-    def add_event(self, elapsed, desc = "", callback = None, arguments = [], stealth = False):
-        self._t = self.time()
-        return _EventLoop.add_event(self, elapsed, desc, callback, arguments, stealth)
-
-    def add_periodical_event(self, elapsed, start_time = 0, desc = "", callback = None, arguments = [], stealth = False):
-        self._t = self.time()
-        return _EventLoop.add_periodical_event(self, elapsed, start_time, desc, callback, arguments, stealth)
-
-    def advance_to_next_event(self):
-        return None
-
-    def loop(self, stime = 0.5):
-        _LOGGER.info("running in real time")
-
-        while True:
-            e = self.execute_next_event()
-            if e is None:
-                time.sleep(stime)
+import threading
+_LOGGER = log.Log("ELOOP")
 
 def create_eventloop(rt = True):
     global _eventloop
     if rt:
-        _eventloop = _EventLoop_RT()
+        _eventloop = _EventLoop_RTT()
     else:
         _eventloop = _EventLoop()
+
+def set_eventloop(evloop):
+    global _eventloop
+    _eventloop = evloop
 
 def get_eventloop():
     global _eventloop
@@ -285,26 +52,311 @@ def now():
         _NOW = _eventloop.time()
     return _NOW
 
-# TODO: implementando la cola con prioridades (hay eventos "poco" prioritarios y otros que son mas: ej. un trabajo termina)
+class Event_Generic(object):
+    '''
+    This is the base class for the definition of one event.
+    '''
+    _id = -1
+    
+    @staticmethod
+    def get_event_id():
+        Event._id = Event._id + 1
+        return Event._id
+
+    PRIO_LOWER = 100
+    PRIO_LOW = 50
+    PRIO_NORMAL = 0
+    PRIO_HIGH = -50
+    PRIO_HIGHER = -100
+    
+    def __init__(self, t, callback = None, description = None, parameters = [], priority = PRIO_NORMAL, mute = False):
+        self.id = Event.get_event_id()
+        self.t = 0
+        self.__set_t(t)
+        if description is None:
+            description = "event %s at %s" % (self.id, self.t)
+        self.description = description
+        self.callback = callback
+        self.parameters = parameters
+        self.priority = priority
+        self.mute = mute
+        self.lastcall = None
+
+    def call(self, now):
+        # This method executes the event. If there is a callback, it will be executed
+        self.lastcall = now
+        
+        if not self.mute:
+            _LOGGER.debug("(@%.4f) executing event (%s) %s - time %.2f" % (now, self.id, self.description, self.t))
+
+        if self.callback is not None:
+            self.callback(*self.parameters)
+            
+    def next_sched(self, now):
+        # This method returns the next time in which the event should be executed. If the event
+        #   has no repetition period, it will return None to indicate that it will not be executed
+        #   anymore.
+        return None
+
+    def reprogram(self, t = None):
+        # This method is set to change the programmation of the next execution of the event
+        self.__set_t(t)
+
+    def __set_t(self, t):
+        # We are truncating to milliseconds in order to avoid artifacts such as programming
+        # two events one after the other for the same elapsed time with different priority
+        # and one of them happens after the other while has more priority
+        #   * This can be related to the resolution of the loop in the RT eventloop
+        #     but it is around 0.5 seconds.
+        self.t = int(t * 100.0) * 0.01
+    
+    def __str__(self):
+        return "(EVENT %d@%.2f) %s" % (self.id, self.t, self.description)
+    
+class Event_Periodical(Event_Generic):
+    '''
+    This class is used to implement events that happen each period of time
+    '''
+    def __init__(self, t, repeat, callback = None, description = None, parameters = [], priority = Event_Generic.PRIO_NORMAL, mute = False):
+        super(self.__class__, self).__init__(t, callback = callback, description = description, parameters = parameters, priority = priority, mute = mute)
+        self.repeat = repeat
+
+    def next_sched(self, now):
+        return self.t
+
+    def call(self, now):
+        # The event will be called as usual, but it will be reprogrammed to be repeated according to the period of time
+        super(self.__class__, self).call(now)
+        self.reprogram(self.t + self.repeat)
+        
+class Event(Event_Generic):
+    '''
+    This class is a simplification of the generic event in order to have events that happen just once
+    '''
+    def __init__(self, t, callback = None, description = None, parameters = [], priority = Event_Generic.PRIO_NORMAL, mute = False):
+        # We will increase the priority by just 1 in order to make that punctual events with the same priority than periodical ones will be executed in first place
+        priority -= 1
+        super(self.__class__, self).__init__(t, callback = callback, description = description, parameters = parameters, priority = priority, mute = mute)
+
+    def next_sched(self, now):
+        # This method returns the next time in which the event should be executed. If the event
+        #   has no repetition period, it will return None to indicate that it will not be executed
+        #   anymore.
+        if self.lastcall is not None:
+            # If the event was called, the there is not any call more
+            return None
+        return self.t
+    
+class Event_Simple(Event):
+    '''
+    This class is a simplification of a generic event to have just an event without callback
+    '''
+    def __init__(self, t, description, mute = False):
+        super(self.__class__, self).__init__(t, callback = None, description = description, parameters = [], priority = Event_Generic.PRIO_NORMAL, mute = mute)        
+
+class _EventLoop(object):
+    '''
+    This class is used to implement a generic event loop that runs on time-steps. The time
+        is simmulated and the eventloop just advances to the next event in the eventloop.
+    '''
+    def __init__(self):
+        self._lock = threading.Lock()
+        self.events = {}
+        self.t = 0
+        self.t = self.time()
+        self._walltime = None
+                
+    def limit_walltime(self, walltime):
+        # This method is used to limit the time during which the event loop will be executed
+        self._walltime = self.time() + walltime
+        
+    def unlimit_walltime(self):
+        # This method removes the limitation of the eventloop and will run forever
+        self._walltime = None
+        
+    def time(self):
+        # This method returns the time, according to the event loop
+        return self.t
+    
+    def add_event(self, event):
+        self._lock.acquire()
+        # This method adds one event to the event loop. The event will be reprogramed to interpret the time
+        #   in which the method is set to be executed to be relative to the moment in which the event is
+        #   added i.e.: now.
+        # It returns the event
+        # It can raise an exception in case that one event with the same id already exists in the eventloop
+        if event.id in self.events:
+            self._lock.release()
+            raise Exception("An event with id %s already exists" % event.id)
+
+        event.reprogram(event.t + self.time())
+        self.events[event.id] = event
+        self._lock.release()
+        return event
+
+    def cancel_event(self, event_id):
+        # This method cancels one event, by using its id. Returns True if the event was cancelled. Otherwise
+        #   it returns False.
+        result = False
+        self._lock.acquire()
+        if event_id in self.events:
+            del self.events[event_id]
+            result = True
+        self._lock.release()
+        return False
+    
+    def _sort_events(self, now):
+        # This method is used to obtain the programmation of the execution of the events in the order of
+        #   happening. Moreover this method also purges all these events that will not be executed anymore
+        # It returns a list of pairs (event_id, program_time) that correspond to the each of the events
+        #   that should be executed in the future.
+        forgotten_events = []
+        nexteventsqueue = []
+
+        self._lock.acquire()
+        for event_id, event in self.events.items():
+            next_sched = event.next_sched(now)
+            if next_sched is None:
+                forgotten_events.append(event_id)
+            else:
+                nexteventsqueue.append((event_id, next_sched, event.priority))
+                
+        # Order according to 1: the time, 2: priority
+        nexteventsqueue.sort(key = lambda x: (x[1], x[2]))
+        self._lock.release()
+
+        # Clean the events that are not being executed anymore
+        for event_id in forgotten_events:
+            self.cancel_event(event_id)
+        
+        return [ (x,y) for (x, y, _) in nexteventsqueue ]
+    
+    def _progress_to_time(self, t):
+        # This method is used to make the time advance in order to be more near to one time
+        self._lock.acquire()
+        self.t = t
+        self._lock.release()
+    
+    def loop(self):
+        # This is the main loop of events. The events will be executed in order, as long as the time in
+        #   the eventloop arrives to them.
+        while True:
+            now = self.time()
+            if (self._walltime is not None) and (now > self._walltime):
+                _LOGGER.info("walltime %.2f achieved" % self._walltime)
+                break
+            
+            next_events = self._sort_events(now)
+            
+            if len(next_events) > 0:
+                (ev_id, program_t ) = next_events[0]
+                
+                # will execute the first event whose time has just passed
+                if program_t <= now:
+                    self._lock.acquire()
+                    ev = self.events[ev_id]
+                    self._lock.release()
+                    ev.call(now)
+                else:
+                    self._progress_to_time(program_t)
+            else:
+                _LOGGER.info("no more events")
+                break
+                        
+    def __str__(self):
+        now = self.time()
+        retval = "Current Time: %f, Pending Events: %d" % (now, len(self.events))
+        if len(self.events) > 0:
+            for ev_id, ev in self.events.items():
+                when = ev.next_sched(now)
+                if when is not None:
+                    when = "%.2f" % when
+                else:
+                    when = "None"
+                retval = "%s\n%s" % (retval, "+%s [%s]" % (when, ev.description))
+        return retval
+
+class _EventLoop_TimeStep(_EventLoop):
+    '''
+    This class is used to create an eventloop that advances in timesteps, instead of advancing
+        on the time of the events. In this way, the events happen between two different moments.
+        So the events are not executed in the moment that they should be executed
+    '''
+    def __init__(self):
+        _EventLoop.__init__(self)
+        self.resolution = 0.5
+
+    def set_resolution(self, resolution):
+        # This method sets the resolution of the time for the eventloop.
+        self.resolution = resolution
+
+    def _progress_to_time(self, t):
+        self._lock.acquire()
+        self.t = self.t + self.resolution
+        self._lock.release()
+
+class _EventLoop_RT(_EventLoop_TimeStep):
+    '''
+    This class is used to create an eventloop that is executed in real time. The time-steps are
+        real time units and the time is interpreted in seconds.
+    '''
+    def time(self):
+        # The current time for this eventloop is based on the realtime, but we are
+        #   substracting the init time in order to get the notion of a local time.
+        return time.time() - self.t
+    
+    def _progress_to_time(self, t):
+        # The way to make that the time is more near to a time "t" in a real-time
+        #   eventloop is just wait. We calculate an addapatative wait time in order
+        #   to take into account the time used to execute the events.
+        now = self.time()
+        tsleep = self.resolution - (now - int(now / self.resolution) * self.resolution)
+        time.sleep(tsleep)
+       
+class _EventLoop_RTT(_EventLoop_RT):
+    def __init__(self):
+        _EventLoop_RT.__init__(self)
+        self.next_event = None
+    
+    def add_event(self, event):
+        ev = _EventLoop_RT.add_event(self, event)
+
+        self._lock.acquire()
+        
+        # Now we will signal the alarm in order to evaluate the event queue again
+        if self.next_event is not None:
+            self.next_event.set()
+        
+        self._lock.release()
+        
+        return ev
+    
+    def _progress_to_time(self, t):
+        self._lock.acquire()
+        
+        if self.next_event is not None:
+            # This CANNOT happen, but it will signal the event just in case
+            self.next_event.set()
+
+        self.next_event = threading.Event()
+        self._lock.release()
+
+        now = self.time()
+        tsignal = t - now
+
+        self.next_event.wait(tsignal)
+            
 if __name__ == '__main__':
+    def create_new_event():
+        get_eventloop().add_event(Event(10, description = "event in second %.1f" % (get_eventloop().time() + 10.0)))
 
-    def function(param):
-        print param
-
-    logging.basicConfig(filename=None,level=logging.DEBUG)
-    
-    create_eventloop(False)
-    _eventloop.add_event(10,"alarma1")
-    _eventloop.add_event(10,"alarma1")
-    _eventloop.add_event(12,"alarma2")
-    _eventloop.add_event(12,"alarma3")
-    _eventloop.add_event(12,"alarma4")
-    _eventloop.add_event(11,"alarma5")
-    _eventloop.add_event(16,"alarma4")
-    _eventloop.add_periodical_event(5, 0,"periodical")
-    _eventloop.add_periodical_event(1, 0,"period-check",function, ["sisisi"])
-    
-    _eventloop.add_event(1,"alarma6",function,["hi"])
-    print _eventloop
-    
-    _eventloop.loop()
+    # create_eventloop(False)
+    set_eventloop(_EventLoop_RTT())
+    # get_eventloop().set_resolution(0.5)
+    #create_eventloop(False)
+    get_eventloop().add_event(Event_Periodical(0, 1, description = "periodical event each 1s"))
+    get_eventloop().add_event(Event_Periodical(5, 3, description = "periodical event that starts in second 5, each 2s"))
+    get_eventloop().add_event(Event(2, description = "event in second 2"))
+    get_eventloop().add_event(Event(2, callback = create_new_event, description = "priority event in second 2", priority = Event.PRIO_HIGH))
+    get_eventloop().limit_walltime(20.1)
+    get_eventloop().loop()

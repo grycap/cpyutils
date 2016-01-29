@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # 
-VERSION="0.14"
+VERSION="0.20"
 
 def get():
     global VERSION
@@ -24,6 +24,22 @@ def get():
 
 '''
 CHANGELOG:
+
+0.20    -   2016-01-28
+    1. CONFIGURATION ENHANCEMENT
+    The config accepts float values (they should be set as float in the default value in order to accept float values from
+    the config file).
+
+    2. ENHANCEMENT OF THE EVENTLOOP
+    
+    An enhanced eventloop is created. Now it is possible to create an eventloop that executes events on its time instead of
+    steps of time. Moreover the code has been greatly enhanced.
+    
+    The previous version of eventloop is kept for compatibility with older apps. It is renamed eventloop0.
+    
+    3. LOGS
+    
+    Added the feature of including a timestamp in the logs, for ALL the logs using the Log class.
 
 0.14    -   2015-12-15
     Including the iputils.py file
