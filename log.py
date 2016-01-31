@@ -17,7 +17,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 import logging
-import eventloop
+
+# This avoids the error of recursive import
+try: import eventloop
+except: pass
 
 _logsetup = False
 _include_timestamp = False

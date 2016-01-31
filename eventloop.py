@@ -69,7 +69,7 @@ class Event_Generic(object):
     PRIO_HIGH = -50
     PRIO_HIGHER = -100
     
-    def __init__(self, t, callback = None, description = None, parameters = [], priority = PRIO_NORMAL, mute = False):
+    def __init__(self, t, callback = None, description = None, parameters = [], priority = PRIO_NORMAL, mute = False, threaded_callback = False):
         self.id = Event.get_event_id()
         self.t = 0
         self.__set_t(t)
@@ -81,6 +81,10 @@ class Event_Generic(object):
         self.priority = priority
         self.mute = mute
         self.lastcall = None
+        self.threaded_callback = threaded_callback
+
+    def execute_callback_in_thread(self, execute_callback_in_thread = True):
+        self.threaded_callback = execute_callback_in_thread
 
     def call(self, now):
         # This method executes the event. If there is a callback, it will be executed
@@ -90,7 +94,11 @@ class Event_Generic(object):
             _LOGGER.debug("(@%.4f) executing event (%s) %s - time %.2f" % (now, self.id, self.description, self.t))
 
         if self.callback is not None:
-            self.callback(*self.parameters)
+            if self.threaded_callback:
+                th = threading.Thread(target=self.callback,args=self.parameters)
+                th.start()
+            else:
+                self.callback(*self.parameters)
             
     def next_sched(self, now):
         # This method returns the next time in which the event should be executed. If the event
@@ -117,8 +125,8 @@ class Event_Periodical(Event_Generic):
     '''
     This class is used to implement events that happen each period of time
     '''
-    def __init__(self, t, repeat, callback = None, description = None, parameters = [], priority = Event_Generic.PRIO_NORMAL, mute = False):
-        super(self.__class__, self).__init__(t, callback = callback, description = description, parameters = parameters, priority = priority, mute = mute)
+    def __init__(self, t, repeat, callback = None, description = None, parameters = [], priority = Event_Generic.PRIO_NORMAL, mute = False, threaded_callback = False):
+        Event_Generic.__init__(self, t, callback = callback, description = description, parameters = parameters, priority = priority, mute = mute, threaded_callback = threaded_callback)
         self.repeat = repeat
 
     def next_sched(self, now):
@@ -126,17 +134,17 @@ class Event_Periodical(Event_Generic):
 
     def call(self, now):
         # The event will be called as usual, but it will be reprogrammed to be repeated according to the period of time
-        super(self.__class__, self).call(now)
+        Event_Generic.call(self, now)
         self.reprogram(self.t + self.repeat)
         
 class Event(Event_Generic):
     '''
     This class is a simplification of the generic event in order to have events that happen just once
     '''
-    def __init__(self, t, callback = None, description = None, parameters = [], priority = Event_Generic.PRIO_NORMAL, mute = False):
+    def __init__(self, t, callback = None, description = None, parameters = [], priority = Event_Generic.PRIO_NORMAL, mute = False, threaded_callback = False):
         # We will increase the priority by just 1 in order to make that punctual events with the same priority than periodical ones will be executed in first place
         priority -= 1
-        super(self.__class__, self).__init__(t, callback = callback, description = description, parameters = parameters, priority = priority, mute = mute)
+        super(self.__class__, self).__init__(t, callback = callback, description = description, parameters = parameters, priority = priority, mute = mute, threaded_callback = threaded_callback)
 
     def next_sched(self, now):
         # This method returns the next time in which the event should be executed. If the event
@@ -152,7 +160,7 @@ class Event_Simple(Event):
     This class is a simplification of a generic event to have just an event without callback
     '''
     def __init__(self, t, description, mute = False):
-        super(self.__class__, self).__init__(t, callback = None, description = description, parameters = [], priority = Event_Generic.PRIO_NORMAL, mute = mute)        
+        super(self.__class__, self).__init__(t, callback = None, description = description, parameters = [], priority = Event_Generic.PRIO_NORMAL, mute = mute, threaded_callback = False)        
 
 class _EventLoop(object):
     '''
@@ -165,6 +173,10 @@ class _EventLoop(object):
         self.t = 0
         self.t = self.time()
         self._walltime = None
+        self._endless_loop = True
+
+    def set_endless_loop(self, endless = True):
+        self._endless_loop = endless
                 
     def limit_walltime(self, walltime):
         # This method is used to limit the time during which the event loop will be executed
@@ -236,7 +248,7 @@ class _EventLoop(object):
         self._lock.acquire()
         self.t = t
         self._lock.release()
-    
+
     def loop(self):
         # This is the main loop of events. The events will be executed in order, as long as the time in
         #   the eventloop arrives to them.
@@ -260,8 +272,13 @@ class _EventLoop(object):
                 else:
                     self._progress_to_time(program_t)
             else:
-                _LOGGER.info("no more events")
-                break
+                if self._endless_loop:
+                    # We are simply implementing an endless loop.
+                    # - Using this mechanism the eventloop will be able to attend to events if they appear
+                    self._progress_to_time(now + 1)
+                else:
+                    _LOGGER.info("no more events")
+                    break
                         
     def __str__(self):
         now = self.time()
@@ -349,9 +366,10 @@ class _EventLoop_RTT(_EventLoop_RT):
 if __name__ == '__main__':
     def create_new_event():
         get_eventloop().add_event(Event(10, description = "event in second %.1f" % (get_eventloop().time() + 10.0)))
-
+        
     # create_eventloop(False)
     set_eventloop(_EventLoop_RTT())
+    set_eventloop(_EventLoop())
     # get_eventloop().set_resolution(0.5)
     #create_eventloop(False)
     get_eventloop().add_event(Event_Periodical(0, 1, description = "periodical event each 1s"))
