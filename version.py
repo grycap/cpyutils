@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # 
-VERSION="0.21"
+VERSION="0.22"
 
 def get():
     global VERSION
@@ -24,6 +24,12 @@ def get():
 
 '''
 CHANGELOG:
+
+0.22    -   2016-02-01
+    Corrected bug in Logs, now it sets the loglevel on creation time (as expected in previous __init__ parameters)
+    
+    Eventloop has asynchronous events that run on threads. Eventloop also has a new end-of-loop condition: the time in which
+    no new events happen can be limited.
 
 0.21    -   2016-01-29
     Creating fileutils.py that now includes utilities to interpret a csv formatted file.

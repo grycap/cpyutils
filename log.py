@@ -39,12 +39,13 @@ class Log:
     def setup(_filename = None, _loglevel = logging.DEBUG):
         logging.basicConfig(filename=_filename,level=_loglevel)
     
-    def __init__(self, name = None, loglevel = logging.DEBUG):
+    def __init__(self, name = None, loglevel = logging.INFO):
         if name is None:
             self._logger = logging.getLogger()
         else:
             self._logger = logging.getLogger("[%s]" % name)
         self._filename = None
+        self._logger.setLevel(loglevel)
         
         global _logsetup
         if not _logsetup:

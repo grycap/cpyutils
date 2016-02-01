@@ -116,7 +116,8 @@ class Event_Generic(object):
         # and one of them happens after the other while has more priority
         #   * This can be related to the resolution of the loop in the RT eventloop
         #     but it is around 0.5 seconds.
-        self.t = int(t * 100.0) * 0.01
+        # self.t = int(t * 100.0) * 0.01
+        self.t = t
     
     def __str__(self):
         return "(EVENT %d@%.2f) %s" % (self.id, self.t, self.description)
@@ -144,7 +145,7 @@ class Event(Event_Generic):
     def __init__(self, t, callback = None, description = None, parameters = [], priority = Event_Generic.PRIO_NORMAL, mute = False, threaded_callback = False):
         # We will increase the priority by just 1 in order to make that punctual events with the same priority than periodical ones will be executed in first place
         priority -= 1
-        super(self.__class__, self).__init__(t, callback = callback, description = description, parameters = parameters, priority = priority, mute = mute, threaded_callback = threaded_callback)
+        Event_Generic.__init__(self, t, callback = callback, description = description, parameters = parameters, priority = priority, mute = mute, threaded_callback = threaded_callback)
 
     def next_sched(self, now):
         # This method returns the next time in which the event should be executed. If the event
@@ -160,7 +161,7 @@ class Event_Simple(Event):
     This class is a simplification of a generic event to have just an event without callback
     '''
     def __init__(self, t, description, mute = False):
-        super(self.__class__, self).__init__(t, callback = None, description = description, parameters = [], priority = Event_Generic.PRIO_NORMAL, mute = mute, threaded_callback = False)        
+        Event.__init__(self, t, callback = None, description = description, parameters = [], priority = Event_Generic.PRIO_NORMAL, mute = mute, threaded_callback = False)        
 
 class _EventLoop(object):
     '''
@@ -174,6 +175,18 @@ class _EventLoop(object):
         self.t = self.time()
         self._walltime = None
         self._endless_loop = True
+        self._max_only_periodical_events = 10
+        self._current_periodical_events = 10
+        self._timestamp_last_new_event = None
+        self._limit_new_events_time = None
+
+    def limit_time_without_new_events(self, limit):
+        # This method is used to limit the times in which no new events appear. This mechanism introduce the ability to finalize one application in which new events do not happen.
+        #    It is designed mainly for simulation purposes, but maybe it has further applications in real-time apps.
+        self._limit_new_events_time = limit
+        
+    def unlimit_time_without_new_events(self):
+        self._limit_new_events_time = None
 
     def set_endless_loop(self, endless = True):
         self._endless_loop = endless
@@ -201,8 +214,10 @@ class _EventLoop(object):
             self._lock.release()
             raise Exception("An event with id %s already exists" % event.id)
 
-        event.reprogram(event.t + self.time())
+        now = self.time()
+        event.reprogram(event.t + now)
         self.events[event.id] = event
+        self._timestamp_last_new_event = now
         self._lock.release()
         return event
 
@@ -257,9 +272,22 @@ class _EventLoop(object):
             if (self._walltime is not None) and (now > self._walltime):
                 _LOGGER.info("walltime %.2f achieved" % self._walltime)
                 break
+
+            if not self._endless_loop:
+                if (self._limit_new_events_time is not None):
+                    elapsed = 0
+                    
+                    self._lock.acquire()
+                    if self._timestamp_last_new_event is not None:
+                        elapsed = now - self._timestamp_last_new_event
+                        
+                    self._lock.release()
+                    if elapsed > self._limit_new_events_time:
+                        _LOGGER.info("limit of time without new events reached")
+                        break
             
             next_events = self._sort_events(now)
-            
+                
             if len(next_events) > 0:
                 (ev_id, program_t ) = next_events[0]
                 
