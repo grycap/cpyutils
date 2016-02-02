@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # 
-VERSION="0.22"
+VERSION="0.23"
 
 def get():
     global VERSION
@@ -24,7 +24,14 @@ def get():
 
 '''
 CHANGELOG:
-
+0.23    -   2016-02-02
+    Setting the time of real time eventloop to absolute values, instead of local time (which were start time elapsed).
+    
+    Includes _Eventloop_RT0 and _Eventloop_RTT0 that create a local time basis (the time is refered to the time in which
+    the eventloop is created).
+    
+    Logs are default to DEBUG
+    
 0.22    -   2016-02-01
     Corrected bug in Logs, now it sets the loglevel on creation time (as expected in previous __init__ parameters)
     

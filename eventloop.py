@@ -346,9 +346,8 @@ class _EventLoop_RT(_EventLoop_TimeStep):
         real time units and the time is interpreted in seconds.
     '''
     def time(self):
-        # The current time for this eventloop is based on the realtime, but we are
-        #   substracting the init time in order to get the notion of a local time.
-        return time.time() - self.t
+        # The current time for this eventloop is based on the realtime.
+        return time.time()
     
     def _progress_to_time(self, t):
         # The way to make that the time is more near to a time "t" in a real-time
@@ -357,6 +356,12 @@ class _EventLoop_RT(_EventLoop_TimeStep):
         now = self.time()
         tsleep = self.resolution - (now - int(now / self.resolution) * self.resolution)
         time.sleep(tsleep)
+
+class _EventLoop_RT0(_EventLoop_RT):
+    def time(self):
+        # The current time for this eventloop is based on the realtime, but we are
+        #   substracting the init time in order to get the notion of a local time.
+        return time.time() - self.t
        
 class _EventLoop_RTT(_EventLoop_RT):
     def __init__(self):
@@ -390,6 +395,12 @@ class _EventLoop_RTT(_EventLoop_RT):
         tsignal = t - now
 
         self.next_event.wait(tsignal)
+
+class _EventLoop_RTT0(_EventLoop_RTT):
+    def time(self):
+        # The current time for this eventloop is based on the realtime, but we are
+        #   substracting the init time in order to get the notion of a local time.
+        return time.time() - self.t
             
 if __name__ == '__main__':
     def create_new_event():
