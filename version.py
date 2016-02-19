@@ -31,6 +31,7 @@ CHANGELOG:
     Using the current approach enables a simple web frontend, but it should not be used as a production web server. It should
     be used for testing purposes or simple local deployments.
 
+	Logging also includes a well-known timestamp.
 
 0.23    -   2016-02-02
     Setting the time of real time eventloop to absolute values, instead of local time (which were start time elapsed).

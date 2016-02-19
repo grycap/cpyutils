@@ -37,7 +37,7 @@ class Log:
     '''
     @staticmethod
     def setup(_filename = None, _loglevel = logging.DEBUG):
-        logging.basicConfig(filename=_filename,level=_loglevel)
+        logging.basicConfig(filename=_filename,level=_loglevel, format = "%(name)10s;%(levelname)5s;%(asctime)s;%(message)s")
     
     def __init__(self, name = None, loglevel = logging.DEBUG):
         if name is None:
@@ -58,7 +58,7 @@ class Log:
     def log(self, txt, loglevel = logging.DEBUG):
         global _include_timestamp
         if _include_timestamp:
-            txt = "(%10.3f) %s" % (eventloop.now(), txt)
+            txt = "%.3f;%s" % (eventloop.now(), txt)
         if loglevel == logging.DEBUG:
             self._logger.debug(txt)
         elif loglevel == logging.INFO:
