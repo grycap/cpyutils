@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # 
-VERSION="0.23"
+VERSION="0.24"
 
 def get():
     global VERSION
@@ -24,6 +24,14 @@ def get():
 
 '''
 CHANGELOG:
+0.24    -   2016-02-19
+    Removing web.py from rpc_web, because its usage had performance issues: lots of simultaneous calls would make the server
+    to hang.
+    
+    Using the current approach enables a simple web frontend, but it should not be used as a production web server. It should
+    be used for testing purposes or simple local deployments.
+
+
 0.23    -   2016-02-02
     Setting the time of real time eventloop to absolute values, instead of local time (which were start time elapsed).
     
