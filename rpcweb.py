@@ -17,50 +17,52 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # 
 
-import web
 import sys
 import threading
 from SimpleXMLRPCServer import SimpleXMLRPCDispatcher
+import SimpleXMLRPCServer
 import sys, logging
+import xmlrpclib
 
-class SilentLogMiddleware:
-    def __init__(self, app):
-        self.app = app
-    def __call__(self, environ, start_response):
-        return self.app(environ, start_response)
+class SimpleXMLRPCRequestHandler_withGET(SimpleXMLRPCServer.SimpleXMLRPCRequestHandler):
+    def _return_html(self, response):
+        self.send_response(200)
+        self.send_header("Content-type", "text/html")
+        if self.encode_threshold is not None:
+            if len(response) > self.encode_threshold:
+                q = self.accept_encodings().get("gzip", 0)
+                if q:
+                    try:
+                        response = xmlrpclib.gzip_encode(response)
+                        self.send_header("Content-Encoding", "gzip")
+                    except NotImplementedError:
+                        pass
+        self.send_header("Content-length", str(len(response)))
+        self.end_headers()
+        self.wfile.write(response)
+    
+    def do_GET(self):
+        if self.server._web_class is None:
+            self.send_response(500)
+        else:
+            self._return_html(self.server._web_class.GET(self.path))
 
-# This line enables to silent the calls from web.py
-web.httpserver.LogMiddleware=SilentLogMiddleware
+class XMLRPCServer(SimpleXMLRPCServer.SimpleXMLRPCServer):
+    def __init__(self, host, port, web_class = None):
+        SimpleXMLRPCServer.SimpleXMLRPCServer.__init__(self, (host, port), requestHandler = SimpleXMLRPCRequestHandler_withGET)
+        self._web_class = None
+        if web_class is not None:
+            self._web_class = web_class()
+        self._host = host
+        self._port = port
+    
+    def start_in_thread(self):
+        self.logRequests = False
+        thread = threading.Thread(target=self.serve_forever)
+        thread.daemon = True
+        thread.start()
+        return thread
 
-def get_dispatcher():
-    global dispatcher
-    try:
-        dispatcher
-    except:
-        dispatcher = SimpleXMLRPCDispatcher(allow_none = False, encoding = "UTF-8")
-    return dispatcher
-
-class rpc_server:
+class web_class:
     def GET(self, url):
         return "please use root url for web browsing"
-    def POST(self):
-        dispatcher = get_dispatcher()
-        response = dispatcher._marshaled_dispatch(web.webapi.data())
-        web.header('Content-length', str(len(response)))
-        return response
-
-class web_server(rpc_server):
-    pass
-
-def start_server(web_class = 'web_server', port = 8080):
-    urls = ('/RPC2', 'rpc_server', '(/.*)', web_class)
-    sys.argv = [ sys.argv[0], str(port) ] + sys.argv[1:]
-    app = web.application(urls, globals())
-    app.internalerror = web.debugerror
-    app.run()
-
-def start_server_in_thread(web_class = 'web_server', port = 80):
-    thread = threading.Thread(args = (web_class, port), target=start_server)
-    thread.daemon = True
-    thread.start()
-    return thread
