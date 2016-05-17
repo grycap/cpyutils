@@ -85,4 +85,4 @@ class Log:
 
     def exception(self, msg):
         # Pass the exception information using the keyword argument exc_info=true
-        return self.log(msg, logging.ERROR, exc_info=true)
+        return self.log(msg, logging.ERROR, exc_info=True)
