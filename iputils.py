@@ -65,7 +65,7 @@ def ip_in_ipmask(ip, ipmask):
     Checks whether an ip is contained in an ip subnet where the subnet is a string with the notation ip/mask (e.g. 192.168.1.1/24 or 192.168.1.1/255.255.255.0)
     '''
     mask_ip, mask = str_to_ipmask(ipmask)
-    return ip_in_ip_maks(ip, mask_ip, mask)
+    return ip_in_ip_mask(ip, mask_ip, mask)
 
 def check_mac(original_mac):
     '''

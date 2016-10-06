@@ -24,6 +24,9 @@ def get():
 
 '''
 CHANGELOG:
+0.25	-   2016-10-06
+    Correct one bug in iputils
+
 0.24    -   2016-02-19
     Removing web.py from rpc_web, because its usage had performance issues: lots of simultaneous calls would make the server
     to hang.
