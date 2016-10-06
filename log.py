@@ -55,7 +55,7 @@ class Log:
     def setup_log(self, loglevel = logging.DEBUG):
         self._logger.setLevel(loglevel)
         
-    def log(self, txt, loglevel = logging.DEBUG):
+    def log(self, txt, loglevel = logging.DEBUG, exc_info = None):
         global _include_timestamp
         if _include_timestamp:
             txt = "%.3f;%s" % (eventloop.now(), txt)
@@ -66,7 +66,7 @@ class Log:
         elif loglevel == logging.WARNING:
             self._logger.info(txt)
         elif loglevel == logging.ERROR:
-            self._logger.error(txt)
+            self._logger.error(txt, exc_info=exc_info)
         else:
             self._logger.debug(txt)
         return txt
@@ -82,3 +82,7 @@ class Log:
 
     def info(self, msg):
         return self.log(msg, logging.INFO)
+
+    def exception(self, msg):
+        # Pass the exception information using the keyword argument exc_info=true
+        return self.log(msg, logging.ERROR, exc_info=True)
