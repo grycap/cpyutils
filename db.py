@@ -72,7 +72,7 @@ class DB():
     def create_from_string(connection_string):
         connection_parameters = None
         
-        r=re.match("mysql://(?:(?P<user>([^:]+|\"[^\"]*\"|'[^']*'))(?::(?P<passwd>(\"[^\"]*\"|'[^']*'|[^@]*))|)@|)(?P<host>[a-zA-Z][a-zA-Z0-9\-\.]*)(?::(?P<port>[0-9]+)|)(?:/|/(?P<db>.+)|)$",connection_string)
+        r=re.match("mysql://(?:(?P<user>([^:]+|\"[^\"]*\"|'[^']*'))(?::(?P<passwd>(\"[^\"]*\"|'[^']*'|[^@]*))|)@|)(?P<host>[a-zA-Z0-9][a-zA-Z0-9\-\.]*)(?::(?P<port>[0-9]+)|)(?:/|/(?P<db>.+)|)$",connection_string)
         if r is not None:
             connection_parameters = { 'driver': 'mysql' }
             (connection_parameters['user'], connection_parameters['password'], connection_parameters['host'], connection_parameters['port'], connection_parameters['db'], ) = (r.group('user'), r.group('passwd'), r.group('host'), r.group('port'), r.group('db'))
@@ -173,7 +173,7 @@ class DB_mysql(DB):
         # _LOGGER.debug("executing query: %s " % query)
         connection = None
         try:
-            connection = mdb.connect(self._conn_string)
+            connection = self.connect()
             cursor = connection.cursor()
             cursor.execute(query)
             if commit:
