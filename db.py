@@ -173,7 +173,7 @@ class DB_mysql(DB):
         # _LOGGER.debug("executing query: %s " % query)
         connection = None
         try:
-            connection = self.connect()
+            connection = mdb.connect(host=self._host, port=self._port, user=self._user, passwd = self._passwd, db = self._dbname)
             cursor = connection.cursor()
             cursor.execute(query)
             if commit:
