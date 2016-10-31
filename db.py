@@ -77,12 +77,13 @@ class DB():
             connection_parameters = { 'driver': 'mysql' }
             (connection_parameters['user'], connection_parameters['password'], connection_parameters['host'], connection_parameters['port'], connection_parameters['db'], ) = (r.group('user'), r.group('passwd'), r.group('host'), r.group('port'), r.group('db'))
 
-            if db is None or db == "":
+            if connection_parameters['db'] is None or connection_parameters['db'] == "":
                 raise MalformedConnectionString("Missing DB Name")
 
-            if port == "": port = None
+            if connection_parameters['port'] is None or connection_parameters['port'] == "":
+                connection_parameters['port'] = 3306
 
-            return DB_mysql(user, passwd, host, port, db)
+            return DB.create_from_connection_parameters(connection_parameters)
         
         r=re.match("sqlite://(?P<path>[^\\\].+)$",connection_string)
         if r is not None:
