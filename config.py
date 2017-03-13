@@ -82,7 +82,7 @@ def config_filename(filename):
     _LOGGER.info("using path \"%s\" for filename \"%s\"" % (filename, filename))
     return filename
 
-def read_config(section, variables, sink, filename = None):
+def read_config(section, variables, sink, filename = None, logvars = False):
     """
         This functions creates a dictionary whose keys are the variables indicated in
         'variables' with the values obtained from the config filenames set for this module.
@@ -133,7 +133,8 @@ def read_config(section, variables, sink, filename = None):
                 
         varname = varname.upper()
         sink.__dict__[varname] = value
-        _LOGGER.debug("%s=%s" % (varname, str(value)))
+        if (logvars):
+            _LOGGER.debug("%s=%s" % (varname, str(value)))
 
 class Configuration():
     """
