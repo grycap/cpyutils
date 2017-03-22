@@ -45,6 +45,7 @@ class HOST(XMLObject):
     MONITORING_ERROR = 5 # Monitoring the host (from error).
     MONITORING_INIT = 6 # Monitoring the host (from init).
     MONITORING_DISABLED = 7 # Monitoring the host (from disabled).
+    OFFLINE = 8 # The host is offline
 
     ONESTATE_2_STR = {
         INIT : 'down',
@@ -54,7 +55,8 @@ class HOST(XMLObject):
         DISABLED:'down',
         MONITORING_ERROR: 'down',
         MONITORING_INIT: 'down',
-        MONITORING_DISABLED: 'down'
+        MONITORING_DISABLED: 'down',
+        OFFLINE: 'off'
     }
     
     values = [ 'ID', 'NAME', 'STATE', 'IM_MAD', 'VM_MAD', 'VN_MAD', 'CLUSTER_ID' ]
@@ -120,7 +122,9 @@ class VM(XMLObject):
     STATE_DONE      = 6
     STATE_FAILED    = 7
     STATE_POWEROFF  = 8
-    STATE_UNDEPLOYED = 9    
+    STATE_UNDEPLOYED = 9
+    STATE_CLONING = 10
+    STATE_CLONING_FAILURE = 11    
 
     # LCM_STATES
     LCM_INIT                = 0
