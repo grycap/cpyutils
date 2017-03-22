@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # 
-VERSION="0.27"
+VERSION="0.26"
 
 def get():
     global VERSION
@@ -24,10 +24,8 @@ def get():
 
 '''
 CHANGELOG:
-0.27    -   2017-03-22
+0.26    -   2017-03-22
     Include new states in oneconnect to avoid failing in ONE 5.2 due to KeyError (issue #10)
-
-0.26    -   2017-03-13
     Enable to dump or not configuration vars when reading.
 
 0.25	-   2016-10-06
