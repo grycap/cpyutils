@@ -32,17 +32,17 @@ class CommandError(Exception):pass
 # TODO: in case that we try to implement the simulator, we should reimplement the run_command apps to use timemachine and events
 #       * it probably will not be needed, because the commands are supposed to not to fail in case that we are simmulating; this
 #         this polling method is for production purposes
-def _runcommand(command, shell=False, timeout = None):
+def _runcommand(command, shell=False, timeout = None, strin = None):
     try:
         p = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=shell, preexec_fn = os.setsid)
-    except:
+    except Exception, e:
         if type(command)==list: command = " ".join(command)
         logging.error('Could not execute command "%s"' %command)
         raise
 
     timer = threading.Timer(timeout, os.killpg, [p.pid, signal.SIGKILL])
     timer.start()
-    (out, err) = p.communicate()
+    (out, err) = p.communicate(input=strin)
     timer.cancel()
 
     if p.returncode != 0:
@@ -54,10 +54,10 @@ def _runcommand(command, shell=False, timeout = None):
     else:
         return out
 
-def runcommand(command, shell = True, timeout = None):
+def runcommand(command, shell = True, timeout = None, strin = None):
     cout = ""
     try:
-        cout = _runcommand(command, shell, timeout)
+        cout = _runcommand(command, shell, timeout, strin)
     except (CommandError, OSError):
         logging.error("error executing command %s" % command)
         return False, cout
