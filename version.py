@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # 
-VERSION="0.27"
+VERSION="0.28"
 
 def get():
     global VERSION
@@ -24,6 +24,10 @@ def get():
 
 '''
 CHANGELOG:
+0.28	-   2017-07-19
+    Removing autosetup for logs as it was buggy
+    Enhancing runcommand
+
 0.27	-   2017-05-18
     Include the option of passing a stdin to the runcommand
 

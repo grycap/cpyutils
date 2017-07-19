@@ -1,7 +1,7 @@
 # coding: utf-8
 #
 # CLUES Python utils - Utils and General classes that spin off from CLUES
-# Copyright (C) 2015 - GRyCAP - Universitat Politecnica de Valencia
+# Copyright (C) 2017 - GRyCAP - Universitat Politecnica de Valencia
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,9 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # 
-# This version of ServerProxy created with the advise of contributors from
-#   - http://stackoverflow.com/a/10012262
-#   - http://stackoverflow.com/a/4791612
 
 import subprocess
 import logging
@@ -44,21 +41,31 @@ def _runcommand(command, shell=False, timeout = None, strin = None):
     timer.start()
     (out, err) = p.communicate(input=strin)
     timer.cancel()
-
-    if p.returncode != 0:
-        if type(command)==list: command = " ".join(command)
-        logging.error(' Error in command "%s"' % command)
-        logging.error(' Return code was: %s' % p.returncode)
-        logging.error(' Error output was:\n%s' % err)
-        raise CommandError()
-    else:
-        return out
+    return (p.returncode, out, err)
 
 def runcommand(command, shell = True, timeout = None, strin = None):
     cout = ""
     try:
-        cout = _runcommand(command, shell, timeout, strin)
-    except (CommandError, OSError):
+        retcode, cout, cerr = _runcommand(command, shell, timeout, strin)
+        if retcode != 0:
+            if type(command)==list: command = " ".join(command)
+            logging.error(' Error in command "%s"' % command)
+            logging.error(' Return code was: %s' % retcode)
+            logging.error(' Error output was:\n%s' % cerr)
+            return False, cout
+        else:
+            return True, cout
+    except OSError:
         logging.error("error executing command %s" % command)
         return False, cout
     return True, cout
+
+def runcommand_e(command, shell = True, timeout = None, strin = None):
+    cout = ""
+    cerr = ""
+    try:
+        retcode, cout, cerr = _runcommand(command, shell, timeout, strin)
+    except OSError:
+        logging.error("error executing command %s" % command)
+        return -1, cout, cerr
+    return retcode, cout, cerr

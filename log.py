@@ -22,7 +22,6 @@ import logging
 try: import eventloop
 except: pass
 
-_logsetup = False
 _include_timestamp = False
 
 def include_timestamp(include = True):
@@ -47,11 +46,6 @@ class Log:
         self._filename = None
         self._logger.setLevel(loglevel)
         
-        global _logsetup
-        if not _logsetup:
-            Log.setup()
-            _logsetup = True
-    
     def setup_log(self, loglevel = logging.DEBUG):
         self._logger.setLevel(loglevel)
         
