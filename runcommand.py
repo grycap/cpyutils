@@ -29,9 +29,9 @@ class CommandError(Exception):pass
 # TODO: in case that we try to implement the simulator, we should reimplement the run_command apps to use timemachine and events
 #       * it probably will not be needed, because the commands are supposed to not to fail in case that we are simmulating; this
 #         this polling method is for production purposes
-def _runcommand(command, shell=False, timeout = None, strin = None):
+def _runcommand(command, shell=False, timeout = None, strin = None, cwd = None):
     try:
-        p = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=shell, preexec_fn = os.setsid)
+        p = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd = cwd, stderr=subprocess.PIPE, shell=shell, preexec_fn = os.setsid)
     except Exception, e:
         if type(command)==list: command = " ".join(command)
         logging.error('Could not execute command "%s"' %command)
@@ -43,10 +43,10 @@ def _runcommand(command, shell=False, timeout = None, strin = None):
     timer.cancel()
     return (p.returncode, out, err)
 
-def runcommand(command, shell = True, timeout = None, strin = None):
+def runcommand(command, shell = True, timeout = None, strin = None, cwd = None):
     cout = ""
     try:
-        retcode, cout, cerr = _runcommand(command, shell, timeout, strin)
+        retcode, cout, cerr = _runcommand(command, shell, timeout, strin, cwd)
         if retcode != 0:
             if type(command)==list: command = " ".join(command)
             logging.error(' Error in command "%s"' % command)
@@ -60,11 +60,11 @@ def runcommand(command, shell = True, timeout = None, strin = None):
         return False, cout
     return True, cout
 
-def runcommand_e(command, shell = True, timeout = None, strin = None):
+def runcommand_e(command, shell = True, timeout = None, strin = None, cwd = None):
     cout = ""
     cerr = ""
     try:
-        retcode, cout, cerr = _runcommand(command, shell, timeout, strin)
+        retcode, cout, cerr = _runcommand(command, shell, timeout, strin, cwd)
     except OSError:
         logging.error("error executing command %s" % command)
         return -1, cout, cerr
