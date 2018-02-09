@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # 
-VERSION="0.29"
+VERSION="0.30"
 
 def get():
     global VERSION
@@ -24,6 +24,9 @@ def get():
 
 '''
 CHANGELOG:
+0.30    -   2018-02-09
+    Revise the grammar in evaluate.py because it had some problems with parenthesis and operator precedence
+
 0.29	-   2017-07-26
     Adding runcommand the capacity of changing the working folder
 

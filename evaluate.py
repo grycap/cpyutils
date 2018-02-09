@@ -200,30 +200,6 @@ def vars_from_string_(s):
 
 
 class Analyzer:
-    DEBUG = True
-    tokens = ('NUM','VAR','COMMA','SQ_LPARENT','SQ_RPARENT','LPARENT','RPARENT','TRUE','FALSE','IN','SUBSET','EQ','LT','GT','LE','NE','GE','AND','OR','EQU','STRING','NOT')
-    reserved = { 'in': 'IN', 'true':'TRUE', 'false':'FALSE', 'not':'NOT', 'and':'AND', 'or':'OR', 'subset': 'SUBSET'}
-    
-    t_COMMA = r'\,'
-    t_SQ_LPARENT = r'\['
-    t_SQ_RPARENT = r'\]'
-    t_LPARENT = r'\('
-    t_RPARENT = r'\)'
-    t_AND = r'\&\&'
-    t_OR = r'\|\|'
-    t_EQU = r'\='
-    
-    literals = ['+','-','/','*','!',';']
-    
-    t_EQ = r'\=\='
-    t_LT = r'\<'
-    t_GT = r'\>'
-    t_LE = r'\<\='
-    t_GE = r'\>\='
-    t_NE = r'\!\='
-    
-    t_ignore = ' \t\n'
-    
     def __init__(self, autodefinevars = True, **kwargs):
         import ply.lex as lex
         import ply.yacc as yacc
@@ -232,6 +208,10 @@ class Analyzer:
         self._VAR_VALUES = {}
         self._autodefine_vars = autodefinevars
         self._current_expr = ""
+
+    def check(self, expr):
+        self._current_expr = expr
+        return self.yacc.parse(expr, debug=0, lexer=self.lexer)
 
     def clear_vars(self):
         self._VAR_VALUES = {}
@@ -246,21 +226,42 @@ class Analyzer:
         for k, v in _vars.items():
             self._VAR_VALUES[k] = v
 
-    def check(self, expr):
-        self._current_expr = expr
-        return self.yacc.parse(expr, debug=0, lexer=self.lexer)
-    
-    def t_error(self, t):
-        _LOGGER.error("not recognized token")
+    tokens = (
+        'NUMBER','VAR','COMMA','SQ_LPAREN','SQ_RPAREN','LPAREN','RPAREN',
+        'TRUE','FALSE','IN','SUBSET','EQ','LT','GT','LE','NE','GE','AND','OR','EQUALS','STRING','NOT',
+        'PLUS', 'DIVIDE', 'MINUS', 'TIMES', 'SEPARATOR')
+    reserved = { 'in': 'IN', 'true':'TRUE', 'false':'FALSE', 'not':'NOT', 'and':'AND', 'or':'OR', 'subset': 'SUBSET'}
+
+    literals = [ '!']
+
+    # Tokens
+    t_SEPARATOR = r'\;'
+    t_PLUS = r'\+'
+    t_MINUS = r'-'
+    t_TIMES = r'\*'
+    t_DIVIDE = r'/'
+    t_EQUALS = r'='
+    t_LPAREN = r'\('
+    t_RPAREN = r'\)'
+    t_COMMA = r'\,'
+    t_SQ_LPAREN = r'\['
+    t_SQ_RPAREN = r'\]'
+    t_AND = r'\&\&'
+    t_OR = r'\|\|'
+    t_EQ = r'\=\='
+    t_LT = r'\<'
+    t_GT = r'\>'
+    t_LE = r'\<\='
+    t_GE = r'\>\='
+    t_NE = r'\!\='
 
     def t_STRING(self,t):
-        r'"[^"]*"'
+        r'"[^\"]*"'
         t.value = t.value[1:-1]
         return t
         
-    def t_NUM(self, t):
+    def t_NUMBER(self, t):
         r'(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?(kb|gb|mb|tb|pb|Kb|Gb|Mb|Tb|Pb)?'
-        # r'\d+[^;^,]*'
         if re.match(r'^(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?(kb|gb|mb|tb|pb|Kb|Gb|Mb|Tb|Pb)?$',t.value):
             multiplyer = 1
             try:
@@ -302,58 +303,8 @@ class Analyzer:
         
     def t_VAR(self, t):
         r'[a-zA-Z_][a-zA-Z0-9_]*'
-    
         t.type = self.reserved.get(t.value.lower(), 'VAR')
         return t
-    
-    def p_kwl_kwv(self, p):
-        ''' kwl : kwv
-                | kwv ';'
-        '''
-        _LOGGER.debug("kwl -> kwv")
-        p[0] = p[1]
-    
-    
-    def p_kwl_kwl(self, p):
-        ''' kwl : kwv ';' kwl '''
-        _LOGGER.debug("kwl -> kwv ; kwl")
-        if p[3] is not None:
-            p[0] = p[3]
-        elif p[1] is not None:
-            p[0] = p[1]
-        else:
-            p[0] = None
-            
-    def p_kwl_v(self, p):
-        ''' kwl : mexp
-                | mexp ';'
-        '''
-        _LOGGER.debug("kwl -> mexp")
-        p[0] = p[1]
-
-    def p_kwl_empty(self, p):
-        ''' kwl : 
-        '''
-        _LOGGER.debug("kwl -> ")
-        
-    def p_kwv_kv(self, p):
-        ''' kwv : VAR EQU mexp '''
-        _LOGGER.debug("kwv -> VAR = mexp")
-        self._VAR_VALUES[p[1]] = p[3]
-    
-    def p_v_bexp(self, p):
-        ''' mexp   : NOT mexp
-        '''
-        _LOGGER.debug("mexp -> ! mexp")
-        if p[2].type != TypedClass.BOOLEAN: raise TypeException()
-        
-        p[0] = TypedClass(not p[2].value, TypedClass.BOOLEAN)
-    
-    def p_v_parent_mexp(self, p):
-        ''' mexp   : LPARENT mexp RPARENT
-        '''
-        _LOGGER.debug("mexp -> ( mexp )")
-        p[0] = p[2]
 
     def _init_vars(self, v1, v2):
         if v1.type == TypedClass.UNKNOWN:
@@ -381,85 +332,99 @@ class Analyzer:
             else:
                 v2.value = None
             v2.type = v1.type
-    
-    def p_mexp_sum(self, p):
-        ''' mexp    : mexp '+' mexp
-                    | mexp '-' mexp
-        '''
-        _LOGGER.debug("mexp -> mexp %s mexp" % p[2])
-        if self._autodefine_vars:
-            self._init_vars(p[1], p[3])
 
-        if p[1].type != p[3].type: raise TypeError()
-        
-        if p[1].type == TypedClass.LIST:
-            p[0] = TypedList(p[1].value + p[3].value)
-        elif p[1].type == TypedClass.STRING:
-            p[0] = TypedClass(p[1].value + p[3].value, TypedClass.STRING)
-        else:
-            if p[1].type != TypedClass.NUMBER: raise TypeError("sum or substract are only allowed between numbers")
-            if p[2] == '+':
-                p[0] = TypedClass(p[1].value + p[3].value, TypedClass.NUMBER)
-            elif p[2] == '-':
-                p[0] = TypedClass(p[1].value - p[3].value, TypedClass.NUMBER)
-            else:
-                raise Exception()
-        
-    def p_mexp_mexp2(self, p):
-        ''' mexp    : mexp2 '''
-        _LOGGER.debug("mexp -> mexp2")
+    t_ignore = " \t\n"
+
+    def t_error(self, t):
+        print("Illegal character '%s'" % t.value[0])
+        t.lexer.skip(1)
+
+    # Parsing rules
+
+    precedence = (
+        ('right', 'NOT'),
+        ('left', 'OR'),
+        ('left', 'AND'),
+        ('left', 'EQ', 'NE'),
+        ('left', 'LT', 'LE', 'GT', 'GE'),
+        ('left', 'PLUS', 'MINUS'),
+        ('left', 'TIMES', 'DIVIDE'),
+        ('right', 'UMINUS'),
+    )
+
+
+    def p_kwl_statement(self, p):
+        ''' kwl : statement
+        '''
+        _LOGGER.debug("kwl -> statement")
         p[0] = p[1]
-    
-    def p_mexp2_mult(self, p):
-        ''' mexp2   :   mexp '*' mexp
-                    |   mexp '/' mexp
+
+    def p_kwl_empty(self, p):
+        ''' kwl : 
         '''
-        _LOGGER.debug("mexp2 -> mexp %s mexp" % p[2])
+        _LOGGER.debug("kwl -> ")
+        p[0] = TypedClass(None, TypedClass.UNKNOWN)
+    
+    def p_kwl_kwl(self, p):
+        ''' kwl : kwl SEPARATOR kwl 
+        '''
+        _LOGGER.debug("kwl -> kwl ; kwl")
+        if p[3] is not None:
+            p[0] = p[3]
+        elif p[1] is not None:
+            p[0] = p[1]
+        else:
+            p[0] = TypedClass(None, TypedClass.UNKNOWN)
+            
+    def p_statement_assign(self, p):
+        ''' statement : VAR EQUALS expression
+        '''
+        _LOGGER.debug("statement -> VAR '=' expression")
+        self.add_vars({p[1]: p[3]})
+
+    def p_statement_expr(self, p):
+        ''' statement : expression
+        '''
+        _LOGGER.debug("statement -> expression")
+        p[0] = p[1]
+
+    def p_statement_notexpr(self, p):
+        ''' expression  : NOT expression
+                        | '!' expression
+        '''
+        _LOGGER.debug("expresion -> ! expression")
+        if p[2].type == TypedClass.BOOLEAN: 
+            p[0] = TypedClass(not p[2].value, TypedClass.BOOLEAN)
+        else:
+            raise TypeError("operator invalid for this type")
+
+    def p_expression_boolop(self, p):
+        """
+        expression : expression GT expression
+                  | expression LT expression
+                  | expression GE expression
+                  | expression LE expression
+                  | expression EQ expression
+                  | expression NE expression
+                  | expression AND expression
+                  | expression OR expression
+        """
+        _LOGGER.debug("expresion -> expresion %s expression" % p[2])
         if self._autodefine_vars:
             self._init_vars(p[1], p[3])
 
         if p[1].type != p[3].type: raise TypeError()
-        if p[1].type != TypedClass.NUMBER: raise TypeError("multiplying or dividing are only allowed between numbers")
-        if p[2] == '*':
-            p[0] = TypedClass(p[1].value * p[3].value, TypedClass.NUMBER)
-        elif p[2] == '/':
-            if p[3] != 0:
-                p[0] = TypedClass(p[1].value / p[3].value, TypedClass.NUMBER)
+
+        if p[1].type == TypedClass.LIST:
+            raise TypeError("operator not defined for lists")
+        if p[1].type == TypedClass.STRING:
+            if p[2] == '==':
+                p[0] = TypedClass(p[1].value == p[3].value, TypedClass.BOOLEAN)
+            elif p[2] == '!=':
+                p[0] = TypedClass(p[1].value != p[3].value, TypedClass.BOOLEAN)
             else:
-                raise OverflowError()
-        else:
-            raise Exception()
-    
-    def p_mexp2_and(self, p):
-        ''' mexp2   :   mexp AND mexp
-                    |   mexp OR mexp
-        '''
-        _LOGGER.debug("mexp2 -> mexp %s mexp" % p[2])
-        if self._autodefine_vars:
-            self._init_vars(p[1], p[3])
+                raise TypeError("operator not defined for strings")
 
-        if p[1].type != p[3].type: raise TypeError()
-        if p[1].type != TypedClass.BOOLEAN: raise TypeError("and and or operators are only allowed between boolean values")
-        if p[2] == '&&':
-            p[0] = TypedClass(p[1].value and p[3].value, TypedClass.BOOLEAN)
-        elif p[2] == '||':
-            p[0] = TypedClass(p[1].value or p[3].value, TypedClass.BOOLEAN)
-        else:
-            raise Exception()
-    
-    
-    def p_mexp2_boolexp(self, p):
-        ''' mexp2   :   mexp GE mexp
-                    |   mexp LE mexp 
-                    |   mexp LT mexp 
-                    |   mexp GT mexp
-        '''
-        _LOGGER.debug("mexp2 -> mexp %s mexp" % p[2])
-        if self._autodefine_vars:
-            self._init_vars(p[1], p[3])
-
-        if p[1].type != p[3].type: raise TypeError()
-        if p[1].type != TypedClass.NUMBER: raise TypeError("comparation operators are only allowed between numbers")
         if p[2] == '>':
             p[0] = TypedClass(p[1].value > p[3].value, TypedClass.BOOLEAN)
         elif p[2] == '<':
@@ -468,28 +433,57 @@ class Analyzer:
             p[0] = TypedClass(p[1].value >= p[3].value, TypedClass.BOOLEAN)
         elif p[2] == '<=':
             p[0] = TypedClass(p[1].value <= p[3].value, TypedClass.BOOLEAN)
-        else:
-            raise Exception()
-    
-    def p_mexp2_booleq(self, p):
-        ''' mexp2   :   mexp NE mexp 
-                    |   mexp EQ mexp
-        '''
-        _LOGGER.debug("mexp2 -> mexp %s mexp" % p[2])
+        elif p[2] == '==':
+            p[0] = TypedClass(p[1].value == p[3].value, TypedClass.BOOLEAN)
+        elif p[2] == '!=':
+            p[0] = TypedClass(p[1].value != p[3].value, TypedClass.BOOLEAN)
+        elif p[2] == '&&':
+            p[0] = TypedClass(p[1].value and p[3].value, TypedClass.BOOLEAN)
+        elif p[2] == '||':
+            p[0] = TypedClass(p[1].value or p[3].value, TypedClass.BOOLEAN)
+
+
+    def p_expression_binop(self, p):
+        """
+        expression : expression PLUS expression
+                  | expression MINUS expression
+                  | expression TIMES expression
+                  | expression DIVIDE expression
+        """
+        _LOGGER.debug("expresion -> expresion %s expression" % p[2])
+
         if self._autodefine_vars:
             self._init_vars(p[1], p[3])
 
         if p[1].type != p[3].type: raise TypeError()
-        if p[2] == '==':
-            p[0] = TypedClass(p[1].value == p[3].value, TypedClass.BOOLEAN)
-        elif p[2] == '!=':
-            p[0] = TypedClass(p[1].value != p[3].value, TypedClass.BOOLEAN)
+        
+        if p[1].type == TypedClass.LIST:
+            if p[2] == '+':
+                p[0] = TypedList(p[1].value + p[3].value)
+            else:
+                raise TypeError('operator not defined for lists')
+        elif p[1].type == TypedClass.STRING:
+            if p[2] == '+':
+                p[0] = TypedClass(p[1].value + p[3].value, TypedClass.STRING)
+            else:
+                raise TypeError('operator not defined for strings')
+        elif p[1].type == TypedClass.NUMBER: 
+            if p[2] == '+':
+                p[0] = TypedClass(p[1].value + p[3].value, TypedClass.NUMBER)
+            elif p[2] == '-':
+                p[0] = TypedClass(p[1].value - p[3].value, TypedClass.NUMBER)
+            if p[2] == '*':
+                p[0] = TypedClass(p[1].value * p[3].value, TypedClass.NUMBER)
+            if p[2] == '/':
+                p[0] = TypedClass(p[1].value / p[3].value, TypedClass.NUMBER)
         else:
-            raise Exception()
-    
-    def p_mexp2_inlist(self, p):
-        ''' mexp2   :   mexp IN lexp '''
-        _LOGGER.debug("mexp2 -> mexp %s lexp" % p[2])
+            raise TypeError("operator invalid for this type")
+
+    def p_expression_inlist(self, p):
+        ''' expression    :   expression IN lexp 
+        '''
+        _LOGGER.debug("expresion -> expresion IN lexp")
+
         if self._autodefine_vars:
             self._init_vars(TypedList([]), p[3])
 
@@ -503,9 +497,10 @@ class Analyzer:
         
         p[0] = TypedClass(retval, TypedClass.BOOLEAN)
     
-    def p_mexp2_invar(self, p):
-        ''' mexp2   :   mexp IN VAR '''
-        _LOGGER.debug("mexp2 -> mexp in VAR")
+    def p_expression_invar(self, p):
+        ''' expression    :   expression IN VAR 
+        '''
+        _LOGGER.debug("expresion -> expresion IN VAR")
     
         if p[3] not in self._VAR_VALUES:
             if self._autodefine_vars:
@@ -517,11 +512,13 @@ class Analyzer:
         if l.type != TypedList.LIST: raise TypeError("list expected for IN operator")
         p[3] = l
         
-        self.p_mexp2_inlist(p)
-    
-    def p_mexp2_subsetlist(self, p):
-        ''' mexp2   :   mexp SUBSET lexp '''
-        _LOGGER.debug("mexp2 -> mexp SUBSET lexp")
+        self.p_expression_inlist(p)
+
+
+    def p_expression_subsetlist(self, p):
+        ''' expression    :   expression SUBSET lexp 
+        '''
+        _LOGGER.debug("expresion -> expresion SUBSET lexp")
     
         if p[1].type != TypedClass.LIST: raise TypeError("lists expected for SUBSET operator")
         if p[3].type != TypedClass.LIST: raise TypeError("lists expected for SUBSET operator")
@@ -539,9 +536,10 @@ class Analyzer:
         
         p[0] = TypedClass(retval, TypedClass.BOOLEAN)
     
-    def p_mexp2_subsetvar(self, p):
-        ''' mexp2   :   mexp SUBSET VAR '''
-        _LOGGER.debug("mexp2 -> mexp SUBSET VAR")
+    def p_expression_subsetvar(self, p):
+        ''' expression    :   expression SUBSET VAR 
+        '''
+        _LOGGER.debug("expresion -> expresion SUBSET VAR")
     
         if p[3] not in self._VAR_VALUES:
             if self._autodefine_vars:
@@ -553,38 +551,71 @@ class Analyzer:
         if l.type != TypedList.LIST: raise TypeError("lists expected for SUBSET operator")
         p[3] = l
         
-        self.p_mexp2_subsetlist(p)
-    
-    def p_mexp2_term(self, p):
-        ''' mexp2   :   term '''
-        _LOGGER.debug("mexp2 -> term")
+        self.p_expression_subsetlist(p)
+
+    def p_expression_uminus(self, p):
+        ''' expression  :   MINUS expression %prec UMINUS
+        '''
+        _LOGGER.debug("expresion -> - expresion")
+
+        if p[2].type == TypedClass.NUMBER: 
+            p[0] = TypedClass(-p[2].value, TypedClass.NUMBER)
+        else:
+            raise TypeError("operator invalid for this type")
+
+    def p_expression_group(self, p):
+        ''' expression  :   LPAREN expression RPAREN
+        '''
+        _LOGGER.debug("expresion -> ( expresion )")
+
+        p[0] = p[2]
+
+    def p_expression_term(self, p):
+        ''' expression : term
+        '''
+        _LOGGER.debug("expresion -> term")
+
         p[0] = p[1]
-    
-    def p_lexp(self, p):
-        ''' lexp    :   SQ_LPARENT l SQ_RPARENT
+
+    def p_error(self, p):
+        if p:
+            print("Syntax error at '%s'" % p.value)
+        else:
+            print("Syntax error at EOF")
+
+    def p_lexp_def(self, p):
+        ''' lexp    :   SQ_LPAREN l SQ_RPAREN
         '''
         _LOGGER.debug("lexp -> [ l ]")
         p[0] = p[2]
     
     def p_l_empty(self, p):
-        ''' l       :   '''
+        ''' l       :   
+        '''
+        _LOGGER.debug("l -> ")
+
         p[0] = TypedList( [] )
     
-    def p_l(self, p):
-        ''' l       :   mexp    '''
-        _LOGGER.debug("l->mexp")
+    def p_l_expression(self, p):
+        ''' l       :   expression    
+        '''
+        _LOGGER.debug("l -> expresion")
+
         l = TypedList( [ p[1] ] )
         p[0] = l
         
-    def p_l_comma(self, p):
-        ''' l       :   mexp COMMA l'''
-        _LOGGER.debug("l->mexp , l")
+    def p_l_comma_l(self, p):
+        ''' l       :   expression COMMA l
+        '''
+        _LOGGER.debug("l -> expresion , l")
+
         if p[3].type != TypedClass.LIST: raise TypeError("list expected")
         l = TypedList( [ p[1] ] + p[3].value)
         p[0] = l
-    
+
     def p_term_var(self, p):
-        ''' term   :    VAR '''
+        ''' term   :    VAR 
+        '''
         _LOGGER.debug("term -> VAR")
         
         # TODO: determine the type of the var
@@ -598,57 +629,44 @@ class Analyzer:
         else:
             raise UndefinedVar()
     
-    def p_term_minvar(self, p):
-        ''' term   :    '-' VAR '''
-        _LOGGER.debug("term -> - VAR")
-        # TODO: determine the type of the var
-        if p[2] in self._VAR_VALUES:
-            _LOGGER.debug("term -> - VAR")
-            v = self._VAR_VALUES[p[2]]
-            if v.type != TypedClass.NUMBER: raise TypeError("number expected for minus operator")
-            p[0] = TypedNumber(-v.value)
-        else:
-            _LOGGER.debug("term -> VAR (string)")
-            p[0] = TypedClass(str(p[1])+str(p[2]), TypedClass.STRING)
-
     def p_term_bool(self, p):
         ''' term    :   TRUE
-                    |   FALSE '''
-        _LOGGER.debug("term -> TRUE")
+                    |   FALSE 
+        '''
+        _LOGGER.debug("term -> TRUE/FALSE")
+
         if p[1].lower() == 'true':
             p[0] = TypedClass(True, TypedClass.BOOLEAN)
         else:
             p[0] = TypedClass(False, TypedClass.BOOLEAN)
         
-        pass
     def p_term_num(self, p):
-        ''' term    :   NUM '''
+        ''' term    :   NUMBER 
+        '''
         _LOGGER.debug("term -> NUM")
+        
         p[0] = TypedNumber(p[1])
     
-    def p_term_minnum(self, p):
-        ''' term    :   '-' NUM '''
-        _LOGGER.debug("term -> - NUM")
-        p[0] = TypedNumber(-p[2])
-
     def p_term_lexp(self, p):
-        ''' term    :   lexp '''
+        ''' term    :   lexp 
+        '''
         _LOGGER.debug("term -> lexp")
+        
         p[0] = p[1]
         
     def p_term_string(self, p):
-        ''' term    :   STRING '''
+        ''' term    :   STRING 
+        '''
         _LOGGER.debug("term -> STRING")
+        
         p[0] = TypedClass(p[1], TypedClass.STRING)
 
     def p_term_empty(self, p):
-        ''' term    :   '''
+        ''' term    :   
+        '''
         _LOGGER.debug("term -> ")
-        p[0] = TypedClass(None, TypedClass.UNKNOWN)
 
-    def p_error(self, p):
-        _LOGGER.error("error in expression near \"%s\" (position: %s) (expression: %s)" % (p.value, p.lexpos, self._current_expr))
-        raise ErrorInExpression()
+        p[0] = TypedClass(None, TypedClass.UNKNOWN)
 
 if __name__ == '__main__':
     logging.basicConfig(filename=None,level=logging.DEBUG)
