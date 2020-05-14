@@ -19,12 +19,18 @@
 
 import sys
 import threading
-from SimpleXMLRPCServer import SimpleXMLRPCDispatcher
-import SimpleXMLRPCServer
-import sys, logging
-import xmlrpclib
+try:
+  from SimpleXMLRPCServer import SimpleXMLRPCServer, SimpleXMLRPCRequestHandler
+except:
+  from xmlrpc.server import SimpleXMLRPCServer, SimpleXMLRPCRequestHandler
 
-class SimpleXMLRPCRequestHandler_withGET(SimpleXMLRPCServer.SimpleXMLRPCRequestHandler):
+import sys, logging
+try:
+  from xmlrpclib import gzip_encode
+except:
+  from xmlrpc.server import gzip_encode
+
+class SimpleXMLRPCRequestHandler_withGET(SimpleXMLRPCRequestHandler):
     def _return_html(self, response):
         self.send_response(200)
         self.send_header("Content-type", "text/html")
@@ -33,7 +39,7 @@ class SimpleXMLRPCRequestHandler_withGET(SimpleXMLRPCServer.SimpleXMLRPCRequestH
                 q = self.accept_encodings().get("gzip", 0)
                 if q:
                     try:
-                        response = xmlrpclib.gzip_encode(response)
+                        response = gzip_encode(response)
                         self.send_header("Content-Encoding", "gzip")
                     except NotImplementedError:
                         pass
@@ -47,9 +53,9 @@ class SimpleXMLRPCRequestHandler_withGET(SimpleXMLRPCServer.SimpleXMLRPCRequestH
         else:
             self._return_html(self.server._web_class.GET(self.path))
 
-class XMLRPCServer(SimpleXMLRPCServer.SimpleXMLRPCServer):
+class XMLRPCServer(SimpleXMLRPCServer):
     def __init__(self, host, port, web_class = None):
-        SimpleXMLRPCServer.SimpleXMLRPCServer.__init__(self, (host, port), requestHandler = SimpleXMLRPCRequestHandler_withGET)
+        SimpleXMLRPCServer.__init__(self, (host, port), requestHandler = SimpleXMLRPCRequestHandler_withGET)
         self._web_class = None
         if web_class is not None:
             self._web_class = web_class()

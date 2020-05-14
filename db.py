@@ -121,7 +121,7 @@ class DB_sqlite(DB):
         try:
             connection = sqlite.connect(self._path)
             connection.commit()
-        except Exception, e:
+        except Exception as e:
             raise e
             _LOGGER.debug("error")
             return False
@@ -142,7 +142,7 @@ class DB_sqlite(DB):
             rowcount = len(rows)
             
             return True, rowcount, rows
-        except Exception, e:
+        except Exception as e:
             if connection is not None:
                 connection.close()
             if commit:
@@ -183,7 +183,7 @@ class DB_mysql(DB):
             
             rows = cursor.fetchall()
             return True, rowcount, rows
-        except Exception, e:
+        except Exception as e:
             if connection is not None:
                 connection.close()
             if commit:
