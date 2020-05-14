@@ -17,7 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import log
+from . import log
 import time
 import threading
 _LOGGER = log.Log("ELOOP")
@@ -177,8 +177,8 @@ class _EventLoop(object):
         self._endless_loop = True
         self._max_only_periodical_events = 10
         self._current_periodical_events = 10
-        self._timestamp_last_new_event = None
         self._limit_new_events_time = None
+        self._timestamp_last_nonperiodical_event = None
 
     def limit_time_without_new_events(self, limit):
         # This method is used to limit the times in which no new events appear. This mechanism introduce the ability to finalize one application in which new events do not happen.
@@ -217,7 +217,6 @@ class _EventLoop(object):
         now = self.time()
         event.reprogram(event.t + now)
         self.events[event.id] = event
-        self._timestamp_last_new_event = now
         self._lock.release()
         return event
 
@@ -274,12 +273,18 @@ class _EventLoop(object):
                 break
 
             if not self._endless_loop:
+                non_periodical = [ x for i, x in self.events.items() if not isinstance(x, Event_Periodical)]
+                if len(non_periodical) > 0:
+                    self._lock.acquire()
+                    self._timestamp_last_nonperiodical_event = now
+                    self._lock.release()
+
                 if (self._limit_new_events_time is not None):
                     elapsed = 0
                     
                     self._lock.acquire()
-                    if self._timestamp_last_new_event is not None:
-                        elapsed = now - self._timestamp_last_new_event
+                    if self._timestamp_last_nonperiodical_event is not None:
+                        elapsed = now - self._timestamp_last_nonperiodical_event
                         
                     self._lock.release()
                     if elapsed > self._limit_new_events_time:
