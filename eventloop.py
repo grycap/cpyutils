@@ -240,7 +240,7 @@ class _EventLoop(object):
         nexteventsqueue = []
 
         self._lock.acquire()
-        for event_id, event in self.events.items():
+        for event_id, event in list(self.events.items()):
             next_sched = event.next_sched(now)
             if next_sched is None:
                 forgotten_events.append(event_id)
@@ -273,7 +273,7 @@ class _EventLoop(object):
                 break
 
             if not self._endless_loop:
-                non_periodical = [ x for i, x in self.events.items() if not isinstance(x, Event_Periodical)]
+                non_periodical = [ x for i, x in list(self.events.items()) if not isinstance(x, Event_Periodical)]
                 if len(non_periodical) > 0:
                     self._lock.acquire()
                     self._timestamp_last_nonperiodical_event = now
@@ -317,7 +317,7 @@ class _EventLoop(object):
         now = self.time()
         retval = "Current Time: %f, Pending Events: %d" % (now, len(self.events))
         if len(self.events) > 0:
-            for ev_id, ev in self.events.items():
+            for ev_id, ev in list(self.events.items()):
                 when = ev.next_sched(now)
                 if when is not None:
                     when = "%.2f" % when

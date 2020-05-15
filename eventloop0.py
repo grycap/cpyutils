@@ -294,7 +294,7 @@ def now():
 if __name__ == '__main__':
 
     def function(param):
-        print param
+        print(param)
 
     logging.basicConfig(filename=None,level=logging.DEBUG)
     
@@ -310,6 +310,6 @@ if __name__ == '__main__':
     _eventloop.add_periodical_event(1, 0,"period-check",function, ["sisisi"])
     
     _eventloop.add_event(1,"alarma6",function,["hi"])
-    print _eventloop
+    print(_eventloop)
     
     _eventloop.loop()

@@ -117,7 +117,7 @@ def read_config(section, variables, sink, filename = None, logvars = False):
     if section in config.sections():
         options = config.options(section)
 
-    for varname, value in variables.items():
+    for varname, value in list(variables.items()):
         orig_varname = varname
         varname = varname.lower()
         if varname in options:
@@ -181,13 +181,13 @@ class Configuration():
         found = False
         if lowercase:
             value = value.lower()
-            for k, v in maps.items():
+            for k, v in list(maps.items()):
                 if value == k.lower():
                     result = v
                     found = True
                     break
         else:
-            for k, v in maps.items():
+            for k, v in list(maps.items()):
                 if value == k:
                     result = v
                     found = True

@@ -21,7 +21,7 @@ try:
     from setuptools import setup
 except ImportError:
     from distutils.core import setup
-import version
+from . import version
 
 setup(name='cpyutils',
       version=version.get(),

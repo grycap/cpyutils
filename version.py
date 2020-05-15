@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # 
-VERSION="0.30"
+VERSION="0.40"
 
 def get():
     global VERSION
@@ -24,6 +24,9 @@ def get():
 
 '''
 CHANGELOG:
+0.40    -   2020-05-15
+    Migration to Python 3 (while still compatible with Python 2)
+    
 0.30    -   2018-02-09
     Revise the grammar in evaluate.py because it had some problems with parenthesis and operator precedence
 

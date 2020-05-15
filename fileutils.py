@@ -64,7 +64,7 @@ def read_csv(filename, separator = " ", clean_callback = None, min_expected_fiel
     ignored = []
     try:
         accepted, ignored = read_csv_from_lines(open(filename), separator, clean_callback, min_expected_fields, max_expected_fields)
-    except IOError, e:
+    except IOError as e:
         _LOGGER.error("cannot read entries for file %s" % filename)
         raise e
         
