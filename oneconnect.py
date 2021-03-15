@@ -526,7 +526,7 @@ class ONEConnect():
             self._version = self._version.split(".")
             _LOGGER.debug("OpenNebula version: %s" % ".".join(self._version))
             return True
-        except Exception, e:
+        except Exception as e:
             self._server = None
             self._version = None
             return False

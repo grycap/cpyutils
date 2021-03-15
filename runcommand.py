@@ -32,7 +32,7 @@ class CommandError(Exception):pass
 def _runcommand(command, shell=False, timeout = None, strin = None, cwd = None):
     try:
         p = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd = cwd, stderr=subprocess.PIPE, shell=shell, preexec_fn = os.setsid)
-    except Exception, e:
+    except Exception as e:
         if type(command)==list: command = " ".join(command)
         logging.error('Could not execute command "%s"' %command)
         raise
