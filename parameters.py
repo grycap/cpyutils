@@ -501,38 +501,38 @@ class CmdLineParser(ArgumentParser):
             parsed, result, info = self.autocall_ops(sys.argv[1:])
             if not parsed:
                 if (result is None):
-                    print "Error:", info
+                    print("Error:", info)
                     sys.exit(-1)
                     
             if (result.values['-h']):
-                print self
+                print(self)
                 sys.exit(0)
         
             if (result.operation is None):
-                print info
+                print(info)
                 sys.exit(-1)
                 
             (opexecuted, explain) = info
-            print explain
+            print(explain)
             if opexecuted:
                 sys.exit(0)
             else:
                 sys.exit(-1)
         else:
             parsed, result, info = self.parse(sys.argv[1:])
-            print result.values
+            print(result.values)
             if not parsed:
                 if (result is None):
-                    print "Error:", info
+                    print("Error:", info)
                     sys.exit(-1)
                 else:
-                    print info
+                    print(info)
                     sys.exit(0)
             else:
                 if self.process(result, info):
                     sys.exit(0)
                 else:
-                    print "Exit with errors"
+                    print("Exit with errors")
                     sys.exit(-1)
 
     # This function is exectued in the autocall_ops procedure. It is called prior to the call to the function that implements the operation
@@ -542,7 +542,7 @@ class CmdLineParser(ArgumentParser):
     # This function is executed if the self_service function is called with the ops parameter set to False and the commandline is properly parsed.
     # * It should return True in case that the function is properly executed. Otherwise it should return False.
     def process(self, result, info):
-        print "Not implemented"
+        print("Not implemented")
         return True
         
 if __name__ == '__main__':
@@ -563,16 +563,16 @@ if __name__ == '__main__':
     ])
     
     parsed, result, info = ap.parse(sys.argv[1:])
-    print result.values
+    print(result.values)
     if not parsed:
         if (result is None):
-            print "Error:", info
+            print("Error:", info)
             sys.exit(-1)
         else:
-            print info
+            print(info)
             sys.exit(0)
     else:
-        print info
+        print(info)
         sys.exit(0)
 
     ########################
@@ -583,16 +583,16 @@ if __name__ == '__main__':
 
     class CluesCmdLine(CmdLineParser):
         def status(self, result, error):
-            print "at status"
+            print("at status")
             return "success"
         def recover(self, result, error):
-            print "recover nodes", result.values['nodes']
+            print("recover nodes", result.values['nodes'])
             return "success"
         def enable(self, result, error):
-            print "enable nodes", result.values['nodes']
+            print("enable nodes", result.values['nodes'])
             return "success"
         def disable(self, result, error):
-            print "disable nodes", result.values['nodes']
+            print("disable nodes", result.values['nodes'])
             return "success"
 
     ap = CluesCmdLine("clues", desc = "The CLUES command line utility", arguments = [
