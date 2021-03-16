@@ -19,7 +19,7 @@
 import logging
 
 # This avoids the error of recursive import
-try: import cpyutils.eventloop
+try: import cpyutils.eventloop as eventloop
 except: pass
 
 _include_timestamp = False
