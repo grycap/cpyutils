@@ -17,7 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import log
+import cpyutils.log
 import time
 import threading
 _LOGGER = log.Log("ELOOP")
