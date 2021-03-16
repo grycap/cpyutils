@@ -20,7 +20,7 @@
 from . import log
 import time
 import threading
-_LOGGER = cpyutils.log.Log("ELOOP")
+_LOGGER = log.Log("ELOOP")
 
 def create_eventloop(rt = True):
     global _eventloop
