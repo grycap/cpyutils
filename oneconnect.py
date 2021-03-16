@@ -18,7 +18,7 @@
 # 
 
 import os
-from xmlobject import XMLObject, XMLObject_KW
+from .xmlobject import XMLObject, XMLObject_KW
 import logging
 import socket
 
@@ -484,10 +484,10 @@ class ONEConnect():
             return True
         try:
             if self._timeout is None:
-                import xmlrpclib
-                self._server = xmlrpclib.ServerProxy(self._ONE_XMLRPC)
+                import xmlrpc.client
+                self._server = xmlrpc.client.ServerProxy(self._ONE_XMLRPC)
             else:
-                import timeoutxmlrpccli
+                from . import timeoutxmlrpccli
                 self._server = timeoutxmlrpccli.ServerProxy(self._ONE_XMLRPC, timeout = self._timeout)
                 
             try:

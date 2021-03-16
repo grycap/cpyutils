@@ -20,18 +20,19 @@
 import sys
 import threading
 try:
-    from SimpleXMLRPCServer import SimpleXMLRPCServer, SimpleXMLRPCRequestHandler, SimpleXMLRPCDispatcher
-except ImportError:
-    from xmlrpc.server import SimpleXMLRPCServer, SimpleXMLRPCDispatcher, SimpleXMLRPCRequestHandler
+  from SimpleXMLRPCServer import SimpleXMLRPCServer, SimpleXMLRPCRequestHandler
+except:
+  from xmlrpc.server import SimpleXMLRPCServer, SimpleXMLRPCRequestHandler
 
 import sys, logging
 try:
-    from xmlrpclib import gzip_encode
-except ImportError:
-    from xmlrpc.client import gzip_encode
+  from xmlrpclib import gzip_encode
+except:
+  from xmlrpc.server import gzip_encode
 
 class SimpleXMLRPCRequestHandler_withGET(SimpleXMLRPCRequestHandler):
     def _return_html(self, response):
+        gzipped = False
         self.send_response(200)
         self.send_header("Content-type", "text/html")
         if self.encode_threshold is not None:
@@ -39,13 +40,18 @@ class SimpleXMLRPCRequestHandler_withGET(SimpleXMLRPCRequestHandler):
                 q = self.accept_encodings().get("gzip", 0)
                 if q:
                     try:
-                        response = gzip_encode(response)
+                        response = gzip_encode(response.encode('utf-8'))
+                        gzipped = True
                         self.send_header("Content-Encoding", "gzip")
                     except NotImplementedError:
                         pass
         self.send_header("Content-length", str(len(response)))
         self.end_headers()
-        self.wfile.write(response)
+        if gzipped:
+            # It is already a byte buffer
+            self.wfile.write(response)
+        else:
+            self.wfile.write(response.encode('utf-8'))            
     
     def do_GET(self):
         if self.server._web_class is None:

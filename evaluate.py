@@ -36,7 +36,7 @@ def TypedDict2Str(d):
     if d is None:
         return retval
     
-    for k, v in d.items():
+    for k, v in list(d.items()):
         if isinstance(v, TypedClass):
             if v.type == TypedClass.STRING:
                 retval = "%s%s=\"%s\";" % (retval, k, v.get())
@@ -223,7 +223,7 @@ class Analyzer:
         if clear:
             self.clear_vars()
             
-        for k, v in _vars.items():
+        for k, v in list(_vars.items()):
             self._VAR_VALUES[k] = v
 
     tokens = (
@@ -684,13 +684,13 @@ if __name__ == '__main__':
     exit()
     
     e=vars_from_string('jobs=;sessions=1181;ncpus=4;physmem=3922492kb;ppn=4;netload=20083230506;uname="Linux ngieswnv1 2.6.32-431.29.2.el6.x86_64 #1 SMP Tue Sep 9 13:45:55 CDT 2014 x86_64";nsessions=1;properties=["lcgpro"];gres=;nusers=1;idletime=521677;queues=["chemig","tutig","dteam","biomed","ops","ictig","earthig","opsig","lifeig","rollout","engig","socialig","physig"];hostname="ngieswnv1";varattr=;loadave=0.00;state="free";opsys="linux";totmem=5986872kb;availmem=5827616kb;rectime=1417717220;')
-    for k,v in e.items():
+    for k,v in list(e.items()):
         print(k,v)
     exit()
     annie = Analyzer(True)
     print(annie.check('hostname="pbsnode01";rectime=1416575227;varattr=;jobs=;state=free;netload=315839;gres=;loadave=0.00;ncpus=1;physmem=503484kb;availmem=445812kb;totmem=503484kb;idletime=1173;nusers=2;nsessions=2;sessions="1070 1002";uname="Linux pbsnode01 3.2.0-64-virtual #97-Ubuntu SMP Wed Jun 4 22:16:47 UTC 2014 x86_64";opsys=linux;queues=[];properties=["q1"];'))
     # print annie.check('rectime=1416564377;varattr=;jobs=;state=free;netload=207353;gres=;loadave=0.00;ncpus=1;physmem=503484kb;availmem=446368kb;totmem=503484kb;idletime=634;nusers=2;nsessions=3;sessions="1113 1068 1223";uname="Linux pbsnode01 3.2.0-64-virtual #97-Ubuntu SMP Wed Jun 4 22:16:47 UTC 2014 x86_64";opsys=linux;queues=[];')
-    for k,v in annie.get_vars().items():
+    for k,v in list(annie.get_vars().items()):
         print("%s = %s" % (k, v.get()))
 
     exit()

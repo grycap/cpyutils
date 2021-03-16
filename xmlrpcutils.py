@@ -79,8 +79,16 @@
 # OF THIS SOFTWARE.
 # --------------------------------------------------------------------
 
-import xmlrpclib
-import httplib
+try:
+    from xmlrpclib import Transport, ServerProxy
+except:
+    from xmlrpc.client import Transport, ServerProxy
+
+try:
+    from httplib import HTTPConnection, HTTP
+except:
+    from http.client import HTTPConnection, HTTP
+
 import socket
 
 try:
@@ -88,25 +96,25 @@ try:
 except:
     _GLOBAL_DEFAULT_TIMEOUT=10
 
-class TimeoutHTTPConnection(httplib.HTTPConnection):
+class TimeoutHTTPConnection(HTTPConnection):
    def connect(self):
-       httplib.HTTPConnection.connect(self)
+       HTTPConnection.connect(self)
        self.sock.settimeout(self.timeout)
 
-class TimeoutHTTP(httplib.HTTP):
+class TimeoutHTTP(HTTP):
    _connection_class = TimeoutHTTPConnection
    def set_timeout(self, timeout):
        self._conn.timeout = timeout
 
-class TimeoutTransport(xmlrpclib.Transport):
+class TimeoutTransport(Transport):
     """
     Custom XML-RPC transport class for HTTP connections, allowing a timeout in
     the base connection.
     """
 
     def __init__(self, timeout=_GLOBAL_DEFAULT_TIMEOUT, use_datetime=0):
-        if hasattr(xmlrpclib.Transport,"__init__"):
-            xmlrpclib.Transport.__init__(self, use_datetime)
+        if hasattr(Transport,"__init__"):
+            Transport.__init__(self, use_datetime)
         self._timeout = timeout
 
     def make_connection(self, host):
@@ -119,7 +127,7 @@ class TimeoutTransport(xmlrpclib.Transport):
             # create a HTTP connection object from a host descriptor
             chost, self._extra_headers, x509 = self.get_host_info(host)
             #store the host argument along with the connection object
-            self._connection = host, httplib.HTTPConnection(chost, timeout = self._timeout)
+            self._connection = host, HTTPConnection(chost, timeout = self._timeout)
             return self._connection[1]
         else:
             host, extra_headers, x509 = self.get_host_info(host)
@@ -127,13 +135,17 @@ class TimeoutTransport(xmlrpclib.Transport):
             conn.set_timeout(self._timeout)
             return conn
             
-class ServerProxy(xmlrpclib.ServerProxy):
+class ServerProxy(ServerProxy):
     def __init__(self, uri, timeout = _GLOBAL_DEFAULT_TIMEOUT, encoding=None, verbose=0, allow_none=0, use_datetime=0):
         transport = TimeoutTransport(timeout = timeout, use_datetime = use_datetime)
-        xmlrpclib.ServerProxy.__init__(self, uri, transport = transport, encoding = encoding, verbose = verbose, allow_none = allow_none)
+        ServerProxy.__init__(self, uri, transport = transport, encoding = encoding, verbose = verbose, allow_none = allow_none)
         
 def create_xmlrpc_server_in_thread(host, port, functions):
-    from SimpleXMLRPCServer import SimpleXMLRPCServer
+    try:
+        from SimpleXMLRPCServer import SimpleXMLRPCServer
+    except:
+        from xmlrpc.server import SimpleXMLRPCServer
+        
     server = SimpleXMLRPCServer((host, port))
     
     for f in functions:

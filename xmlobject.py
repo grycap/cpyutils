@@ -61,7 +61,7 @@ class XMLObject:
 	def _parse(self, xml_str, parameters):
 		dom = xml.dom.minidom.parseString(xml_str)
 
-		for tag, className in self.__class__.tuples.items():
+		for tag, className in list(self.__class__.tuples.items()):
 			objs = dom.getElementsByTagName(tag)
 			if (len(objs) > 0):
 				if parameters is None:
@@ -73,7 +73,7 @@ class XMLObject:
 				newObj = None
 			self.__setattr__(tag, newObj)
 
-		for tag, className in self.__class__.tuples_lists.items():
+		for tag, className in list(self.__class__.tuples_lists.items()):
 			objs = dom.getElementsByTagName(tag)
 			obj_list = []
 			for obj in objs:

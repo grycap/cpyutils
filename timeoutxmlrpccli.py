@@ -18,6 +18,6 @@
 # 
 
 # This file is intended for compatibility purposes only
-import xmlrpcutils
+from . import xmlrpcutils
 class ServerProxy(xmlrpcutils.ServerProxy):
     pass

@@ -18,10 +18,6 @@
 #
 import logging
 
-# This avoids the error of recursive import
-try: import cpyutils.eventloop as eventloop
-except: pass
-
 _include_timestamp = False
 
 def include_timestamp(include = True):
@@ -51,6 +47,9 @@ class Log:
         
     def log(self, txt, loglevel = logging.DEBUG, exc_info = None):
         global _include_timestamp
+        # This avoids the error of recursive import
+        from . import eventloop
+
         if _include_timestamp:
             txt = "%.3f;%s" % (eventloop.now(), txt)
         if loglevel == logging.DEBUG:

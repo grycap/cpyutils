@@ -289,9 +289,9 @@ class ArgumentParser(_Parameter_base):
 
     def parse(self, args, result, error):
         # The arguments are processed in the fifo order. We are not processing them using any priority system (although it is commited for the future)
-        for _, arg in self._arguments.items():
+        for _, arg in list(self._arguments.items()):
             arg._initialize_result(result)
-        for _, arg in self._parameters.items():
+        for _, arg in list(self._parameters.items()):
             arg._initialize_result(result)
         
         # Initialize the other_arguments array to later check the arguments
@@ -328,12 +328,12 @@ class ArgumentParser(_Parameter_base):
                 failed = True
                 error.append("could not recognise parameters '%s'" % (" ".join(args)))
 
-        for _, myarg in self._arguments.items():
+        for _, myarg in list(self._arguments.items()):
             if (myarg._name not in result.detected) and (myarg._mandatory):
                 failed = True
                 error.append("missing mandatory argument '%s' for '%s'" % (myarg._name, self._name))
 
-        for _, myarg in self._parameters.items():
+        for _, myarg in list(self._parameters.items()):
             if (myarg._name not in result.detected) and (myarg._mandatory):
                 failed = True
                 error.append("missing mandatory argument '%s' for '%s'" % (myarg._name, self._name))
