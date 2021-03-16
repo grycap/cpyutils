@@ -97,8 +97,12 @@ def read_config(section, variables, sink, filename = None, logvars = False):
         the value.
     """
     global _ETC_PATHS
-    import ConfigParser
-    config = ConfigParser.ConfigParser()
+    try:
+        import configparser
+        config = configparser.ConfigParser()
+    except Exception:
+        import ConfigParser
+        config = ConfigParser.ConfigParser()
     
     if filename is None:
         config_files = existing_config_files()
